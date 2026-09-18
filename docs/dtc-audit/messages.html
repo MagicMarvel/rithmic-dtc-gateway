@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <meta name="description" content="Sierra Chart is a professional Trading platform for the financial markets. Supporting Manual, Automated and Simulated Trading." >
+        <meta name="keywords" content="online trading platform, charting software, futures, stock, forex, discretionary trading, automated trading, trade simulator, trading system development, trading strategy development" >     
+        
+        <link rel="stylesheet" type="text/css" href="/includes/Minified.css" >
+        
+        <link rel="icon" type="image/png" sizes="192x192" href="favicon/favicon-192x192.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+        
+        <script type="text/javascript" src="/jscripts/jquery-3.7.1.min.js"></script>
+        
+        <script type="text/javascript">
+
+    function HasPageBeenModified(filemtime = '1698721049') {
+        $.ajax({
+            url: '/Ajax.php',
+            type: 'post',
+            data: {
+              'Service': 'Page',
+              'Do': 'HasPageBeenModified',
+              'filemtime': filemtime,
+              'FileName': 'doc/DTCMessages_All.php',
+            },
+            success: function(data, status) {
+              if(data['result'] == "NewPageEdits" && data['Content']) {
+                    $('#NewPageEdits').remove();
+                    $('#container').append('<div id="NewPageEdits">'+data['Content']+'</div>')
+                    $('#NewPageEdits').dialog({
+                        width: 150,
+                        position: { at: 'right-96 top-5%'},
+                        modal: false,
+                        resizable: false,
+                        create: function (event, ui) { $(event.target).parent().css('position', 'fixed'); }
+                    });
+
+                    $(".ui-dialog-titlebar").hide();
+              }
+            },
+            error: function(xhr, desc, err) {
+              console.log(xhr);
+              console.log("Details: " + desc + " | Error:" + err);
+            }
+        });
+
+    }
+
+    window.setInterval(HasPageBeenModified , 900000);
+
+</script>
+
+        <title>All DTC Messages -  Sierra Chart</title>
+    </head>               
+    <body>
+        <div id="container">
+            <div id="banner" class="pure-g">
+    <div class="pure-u-1 pure-u-md-1-3">
+        <a href="https://www.sierrachart.com"><img src="https://www.sierrachart.com/images/Logo/SierraChartLogo.png" alt="Sierra Chart - Financial Market Charting and Trading Software" class="logo"></a>
+    </div>
+    <div class="pure-u-1 pure-u-md-2-3">
+        <div class="pure-g">
+            <div class="pure-u-1-2" style="text-align: right;">
+            <div class="pure-form CSSDarkMode">
+    <form action="/index.php?page=doc/DTCMessages_All.php" method="POST">
+        <input type="hidden" name="DarkMode" value="On">
+        <button type="submit" class="pure-button pure-button-primary">Toggle Dark Mode</button>
+    </form>
+</div>
+            </div>            
+            <div class="pure-u-1-2">
+            <div class="pure-form SearchBar">
+    <form action="https://search.sierrachart.com/" method="GET">
+        <input name="Query" value="" type="text" placeholder="Find" size="25">
+        <input type="hidden" name="submitted" value="true">
+        <input type="submit" value="Search" class="pure-button">
+    </form>
+</div>
+            </div>
+            <div class="pure-u-1">
+                <h2 class="title">Sierra Chart</h2> 
+                <p class="tagline">Financial Markets Charting and Trading Platform</p>    
+            </div>
+        </div>
+    </div>
+</div>
+            <div class="pure-menu pure-menu-horizontal top-nav-bar">
+    <ul class="pure-menu-list">
+        <li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Main</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/">Home</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SoftwareDownload.php">Software Download</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Whats_New.php">What Is New</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Features.php">Features</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Image_gallery.php">User Image Gallery</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/AdditionalFiles.php">Additional Files</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/AboutUs.php" >About Us</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/OtherSitesLinks.php">Other Websites</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Documentation</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Contents.php">Table of Contents</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/help.php">Frequently Asked Questions</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/setup.php">Sierra Chart Setup Instructions</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/VideoLibrary.php">Video Library</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Whats_New.php">What Is New</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/DevelopingCustomStudiesAndSystems.php">Developing for Sierra Chart</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/BrokerServices.html">Services for Brokers</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Getting Started</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/setup.php">Sierra Chart Setup Instructions</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SoftwareDownload.php">Software Download</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/helpdetails59.php">What Is Included in Free Trial</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/FuturesData.php">Understanding Real-time  Futures Data</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Account Management</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/RegisterStep1.php">Create Account</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php#MoveToTop">Account Control Panel</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php?page=AddAccountCredit#MoveToTop">Make a Payment</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php?page=ServicesActivation#MoveToTop">Activate Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/PurchaseInformation.php">License and Purchase Info</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Packages.php">Pricing</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/PasswordReset.php">Account Password Reset</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Support</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/support.html">Contact</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/SupportBoard.php">* Support Board *</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SelfHelp.php&Source=Ticket">Self Help/Account Support Tickets</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SoftwareDownload.php">Software Download</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php">Account Control Panel</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SierraChartStudyAndSystemProgrammers.php">Study and System Programmers</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php?page=StudyStore#MoveToTop">Custom Studies Store/List</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+                        
+<form action="/UserControlPanel.php#loginForm" method="post" style="margin-top:3.1em;" class="SmallLoginLogOutForm" title="Enter your Sierra Chart Account Name and Password.">
+    <input class="TextInput" name="username" placeholder="SC Account Name">
+    <input class="TextInput" name="password" type="password">
+    <input type="submit" value="Login" >
+    <input type="hidden" name="RedirectTo" value="/index.php?page=doc/DTCMessages_All.php" >
+    <a href="/UserControlPanel.php" target="_blank" rel="noopener noreferrer">Login Page</a>
+     - <a href="https://www.sierrachart.com/RegisterStep1.php">Create Account</a>
+    
+</form>
+
+            <div class="content">
+<div class="HierarchyLinks"> <h4 id="top"><a href="/">Home</a> &gt;&gt; <a  href="/index.php?page=doc/DTCMessages_All.php">Getting Started</a></h4> </div>     <h1 class="PageName">All DTC Messages</h1>
+
+<section class="h2">
+
+
+
+    <p>Below are the links to each message which includes the documentation for the message and the fields within  the message.</p>
+
+    <p>The documentation for each message is not meant to be specific to any particular encoding,  whether binary, JSON, or Google protocol buffers.</p>
+    
+    <section class="h3">
+        <h3 id="AuthenticationConnectionMonitoringMessages">Authentication and Connection Monitoring Messages</h3>
+        <div class="member-link">[<a href="#AuthenticationConnectionMonitoringMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_REQUEST">LOGON_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGOFF">LOGOFF</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-HEARTBEAT">HEARTBEAT</a></li>
+        </ul>
+
+    </section>
+
+    <section class="h3">
+        <h3 id="MarketDataMessages">Market Data Messages</h3>
+        <div class="member-link">[<a href="#MarketDataMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_FEED_STATUS">MARKET_DATA_FEED_STATUS</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_FEED_SYMBOL_STATUS">MARKET_DATA_FEED_SYMBOL_STATUS</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_REQUEST">MARKET_DATA_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_REQUEST">MARKET_DEPTH_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_REJECT">MARKET_DATA_REJECT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_REJECT">MARKET_DEPTH_REJECT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_SNAPSHOT">MARKET_DATA_SNAPSHOT</a></li>
+
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_SNAPSHOT_LEVEL">MARKET_DEPTH_SNAPSHOT_LEVEL</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_UPDATE_LEVEL">MARKET_DEPTH_UPDATE_LEVEL</a></li>
+
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_TRADE">MARKET_DATA_UPDATE_TRADE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_BID_ASK">MARKET_DATA_UPDATE_BID_ASK</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_LAST_TRADE_SNAPSHOT">MARKET_DATA_UPDATE_LAST_TRADE_SNAPSHOT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_TRADE_COMPACT">MARKET_DATA_UPDATE_TRADE_COMPACT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_VOLUME">MARKET_DATA_UPDATE_SESSION_VOLUME</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_OPEN_INTEREST">MARKET_DATA_UPDATE_OPEN_INTEREST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_SETTLEMENT">MARKET_DATA_UPDATE_SESSION_SETTLEMENT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_HIGH">MARKET_DATA_UPDATE_SESSION_HIGH</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_LOW">MARKET_DATA_UPDATE_SESSION_LOW</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_OPEN">MARKET_DATA_UPDATE_SESSION_OPEN</a></li>
+
+        </ul>
+    </section>
+
+    <section class="h3">
+        <h3 id="OrderEntryModificationMessages">Order Entry and Modification Messages</h3>
+        <div class="member-link">[<a href="#OrderEntryModificationMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_SINGLE_ORDER">SUBMIT_NEW_SINGLE_ORDER</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_OCO_ORDER">SUBMIT_NEW_OCO_ORDER</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_FLATTEN_POSITION_ORDER">SUBMIT_FLATTEN_POSITION_ORDER</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-CANCEL_REPLACE_ORDER">CANCEL_REPLACE_ORDER</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-CANCEL_ORDER">CANCEL_ORDER</a></li>
+        </ul>
+    </section>
+
+    <section class="h3">
+        <h3 id="TradingRelatedMessages">Trading Related Messages</h3>
+        <div class="member-link">[<a href="#TradingRelatedMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-OPEN_ORDERS_REQUEST">OPEN_ORDERS_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-OPEN_ORDERS_REJECT">OPEN_ORDERS_REJECT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-HISTORICAL_ORDER_FILLS_REQUEST">HISTORICAL_ORDER_FILLS_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-HISTORICAL_ORDER_FILL_RESPONSE">HISTORICAL_ORDER_FILL_RESPONSE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-HISTORICAL_ORDER_FILLS_REJECT">HISTORICAL_ORDER_FILLS_REJECT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-CURRENT_POSITIONS_REQUEST">CURRENT_POSITIONS_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-POSITION_UPDATE">POSITION_UPDATE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-CURRENT_POSITIONS_REJECT">CURRENT_POSITIONS_REJECT</a></li>
+        </ul>
+    </section>
+
+    <section class="h3">
+        <h3 id="AccountListMessages">Account List Messages</h3>
+        <div class="member-link">[<a href="#AccountListMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_AccountListMessages.php#Messages-TRADE_ACCOUNTS_REQUEST">TRADE_ACCOUNTS_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AccountListMessages.php#Messages-TRADE_ACCOUNT_RESPONSE">TRADE_ACCOUNT_RESPONSE</a></li>
+        </ul>
+    </section>
+
+    <section class="h3">
+        <h3 id="SymbolDiscoverySecurityDefinitionsMessages">Symbol Discovery and Security Definitions Messages</h3>
+        <div class="member-link">[<a href="#SymbolDiscoverySecurityDefinitionsMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-EXCHANGE_LIST_REQUEST">EXCHANGE_LIST_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-EXCHANGE_LIST_RESPONSE">EXCHANGE_LIST_RESPONSE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SYMBOLS_FOR_EXCHANGE_REQUEST">SYMBOLS_FOR_EXCHANGE_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-UNDERLYING_SYMBOLS_FOR_EXCHANGE_REQUEST">UNDERLYING_SYMBOLS_FOR_EXCHANGE_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SYMBOLS_FOR_UNDERLYING_REQUEST">SYMBOLS_FOR_UNDERLYING_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SYMBOL_SEARCH_REQUEST">SYMBOL_SEARCH_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SECURITY_DEFINITION_FOR_SYMBOL_REQUEST">SECURITY_DEFINITION_FOR_SYMBOL_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SECURITY_DEFINITION_REJECT">SECURITY_DEFINITION_REJECT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SECURITY_DEFINITION_RESPONSE">SECURITY_DEFINITION_RESPONSE</a></li>
+        </ul>
+    </section>
+
+    <section class="h3">
+        <h3 id="AccountBalanceDataMessages">Account Balance Data Messages</h3>
+        <div class="member-link">[<a href="#AccountBalanceDataMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_AccountBalanceDataMessages.php#Messages-ACCOUNT_BALANCE_REQUEST">ACCOUNT_BALANCE_REQUEST</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AccountBalanceDataMessages.php#Messages-ACCOUNT_BALANCE_REJECT">ACCOUNT_BALANCE_REJECT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AccountBalanceDataMessages.php#Messages-ACCOUNT_BALANCE_UPDATE">ACCOUNT_BALANCE_UPDATE</a></li>
+        </ul>
+    </section>
+
+    <section class="h3">
+        <h3 id="LoggingMessages">Logging Messages</h3>
+        <div class="member-link">[<a href="#LoggingMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_LoggingMessages.php#Messages-USER_MESSAGE">USER_MESSAGE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_LoggingMessages.php#Messages-GENERAL_LOG_MESSAGE">GENERAL_LOG_MESSAGE</a></li>
+        </ul>
+    </section>
+
+    <section class="h3">
+        <h3 id="HistoricalPriceDataMessages">Historical Price Data Messages</h3>
+        <div class="member-link">[<a href="#HistoricalPriceDataMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_REQUEST">HISTORICAL_PRICE_DATA_REQUEST</a></li>
+            <li><a href="#Messages-HISTORICAL_PRICE_DATA_RESPONSE_HEADER">HISTORICAL_PRICE_DATA_RESPONSE_HEADER</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_REJECT">HISTORICAL_PRICE_DATA_REJECT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_RECORD_RESPONSE">HISTORICAL_PRICE_DATA_RECORD_RESPONSE</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE">HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE</a></li>
+        </ul>
+    </section>
+
+</section>
+
+<hr><p>*Last modified Tuesday, 31st October, 2023.</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+                <div id="footer" style="font-size:66%" class="ClearBoth">
+                    <hr>
+                    <a href="/index.php?page=doc/PurchaseInformation.php" target="_blank" rel="noopener noreferrer">Service Terms and Refund Policy</a>
+                    <br><br>
+                    
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript" src="/jscripts/Minified.js"></script>
+        <script type="text/javascript">
+
+        </script>
+    </body>
+</html>  

@@ -1,0 +1,6198 @@
+{
+  "messages": [
+    {
+      "name": "LOGON_REQUEST",
+      "id": 1,
+      "deprecated": false,
+      "implementation": "LOGON_REQUEST"
+    },
+    {
+      "name": "LOGON_RESPONSE",
+      "id": 2,
+      "deprecated": false,
+      "implementation": "LOGON_RESPONSE"
+    },
+    {
+      "name": "HEARTBEAT",
+      "id": 3,
+      "deprecated": false,
+      "implementation": "HEARTBEAT"
+    },
+    {
+      "name": "LOGOFF",
+      "id": 5,
+      "deprecated": false,
+      "implementation": "LOGOFF"
+    },
+    {
+      "name": "ENCODING_REQUEST",
+      "id": 6,
+      "deprecated": false,
+      "implementation": "ENCODING_REQUEST"
+    },
+    {
+      "name": "ENCODING_RESPONSE",
+      "id": 7,
+      "deprecated": false,
+      "implementation": "ENCODING_RESPONSE"
+    },
+    {
+      "name": "MARKET_DATA_REQUEST",
+      "id": 101,
+      "deprecated": false,
+      "implementation": "MARKET_DATA_REQUEST"
+    },
+    {
+      "name": "MARKET_DATA_REJECT",
+      "id": 103,
+      "deprecated": false,
+      "implementation": "MARKET_DATA_REJECT"
+    },
+    {
+      "name": "MARKET_DATA_SNAPSHOT",
+      "id": 104,
+      "deprecated": false,
+      "implementation": "MARKET_DATA_SNAPSHOT"
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_TRADE",
+      "id": 107,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_TRADE_COMPACT",
+      "id": 112,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_LAST_TRADE_SNAPSHOT",
+      "id": 134,
+      "deprecated": false,
+      "implementation": "MARKET_DATA_UPDATE_LAST_TRADE_SNAPSHOT"
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_TRADE_WITH_UNBUNDLED_INDICATOR",
+      "id": 137,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_TRADE_WITH_UNBUNDLED_INDICATOR_2",
+      "id": 146,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_TRADE_V2",
+      "id": 147,
+      "deprecated": false,
+      "implementation": "MARKET_DATA_UPDATE_TRADE_V2"
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_BID_ASK",
+      "id": 108,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_BID_ASK_COMPACT",
+      "id": 117,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_BID_ASK_FLOAT_WITH_MICROSECONDS",
+      "id": 144,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_BID_ASK_DOUBLE_WITH_MICROSECONDS",
+      "id": 148,
+      "deprecated": false,
+      "implementation": "MARKET_DATA_UPDATE_BID_ASK_V2"
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_SESSION_OPEN",
+      "id": 120,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_SESSION_HIGH",
+      "id": 114,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_SESSION_LOW",
+      "id": 115,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_SESSION_VOLUME",
+      "id": 113,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_OPEN_INTEREST",
+      "id": 124,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_SESSION_SETTLEMENT",
+      "id": 119,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_SESSION_NUM_TRADES",
+      "id": 135,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_UPDATE_TRADING_SESSION_DATE",
+      "id": 136,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DEPTH_REQUEST",
+      "id": 102,
+      "deprecated": false,
+      "implementation": "MARKET_DEPTH_REQUEST"
+    },
+    {
+      "name": "MARKET_DEPTH_REJECT",
+      "id": 121,
+      "deprecated": false,
+      "implementation": "MARKET_DEPTH_REJECT"
+    },
+    {
+      "name": "MARKET_DEPTH_SNAPSHOT_LEVEL",
+      "id": 122,
+      "deprecated": false,
+      "implementation": "MARKET_DEPTH_SNAPSHOT_LEVEL"
+    },
+    {
+      "name": "MARKET_DEPTH_SNAPSHOT_LEVEL_FLOAT",
+      "id": 145,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DEPTH_UPDATE_LEVEL_V2",
+      "id": 109,
+      "deprecated": false,
+      "implementation": "MARKET_DEPTH_UPDATE_LEVEL_V2"
+    },
+    {
+      "name": "MARKET_DEPTH_UPDATE_LEVEL_FLOAT_WITH_MILLISECONDS",
+      "id": 140,
+      "deprecated": true,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_DATA_FEED_STATUS",
+      "id": 100,
+      "deprecated": false,
+      "implementation": "MARKET_DATA_FEED_STATUS"
+    },
+    {
+      "name": "MARKET_DATA_FEED_SYMBOL_STATUS",
+      "id": 116,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "TRADING_SYMBOL_STATUS",
+      "id": 138,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_ORDERS_REQUEST",
+      "id": 150,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_ORDERS_REJECT",
+      "id": 151,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_ORDERS_ADD",
+      "id": 152,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_ORDERS_MODIFY",
+      "id": 153,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_ORDERS_REMOVE",
+      "id": 154,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "MARKET_ORDERS_SNAPSHOT_MESSAGE_BOUNDARY",
+      "id": 155,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "SUBMIT_NEW_SINGLE_ORDER",
+      "id": 208,
+      "deprecated": false,
+      "implementation": "SUBMIT_NEW_SINGLE_ORDER"
+    },
+    {
+      "name": "SUBMIT_NEW_OCO_ORDER",
+      "id": 201,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "SUBMIT_FLATTEN_POSITION_ORDER",
+      "id": 209,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "FLATTEN_POSITIONS_FOR_TRADE_ACCOUNT",
+      "id": 210,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "CANCEL_ORDER",
+      "id": 203,
+      "deprecated": false,
+      "implementation": "CANCEL_ORDER"
+    },
+    {
+      "name": "CANCEL_REPLACE_ORDER",
+      "id": 204,
+      "deprecated": false,
+      "implementation": "CANCEL_REPLACE_ORDER"
+    },
+    {
+      "name": "OPEN_ORDERS_REQUEST",
+      "id": 300,
+      "deprecated": false,
+      "implementation": "OPEN_ORDERS_REQUEST"
+    },
+    {
+      "name": "OPEN_ORDERS_REJECT",
+      "id": 302,
+      "deprecated": false,
+      "implementation": "OPEN_ORDERS_REJECT"
+    },
+    {
+      "name": "ORDER_UPDATE",
+      "id": 301,
+      "deprecated": false,
+      "implementation": "ORDER_UPDATE"
+    },
+    {
+      "name": "HISTORICAL_ORDER_FILLS_REQUEST",
+      "id": 303,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_ORDER_FILLS_REJECT",
+      "id": 308,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_ORDER_FILL_RESPONSE",
+      "id": 304,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "CURRENT_POSITIONS_REQUEST",
+      "id": 305,
+      "deprecated": false,
+      "implementation": "CURRENT_POSITIONS_REQUEST"
+    },
+    {
+      "name": "CURRENT_POSITIONS_REJECT",
+      "id": 307,
+      "deprecated": false,
+      "implementation": "CURRENT_POSITIONS_REJECT"
+    },
+    {
+      "name": "POSITION_UPDATE",
+      "id": 306,
+      "deprecated": false,
+      "implementation": "POSITION_UPDATE"
+    },
+    {
+      "name": "ADD_CORRECTING_ORDER_FILL",
+      "id": 309,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "CORRECTING_ORDER_FILL_RESPONSE",
+      "id": 310,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "TRADE_ACCOUNTS_REQUEST",
+      "id": 400,
+      "deprecated": false,
+      "implementation": "TRADE_ACCOUNTS_REQUEST"
+    },
+    {
+      "name": "TRADE_ACCOUNT_RESPONSE",
+      "id": 401,
+      "deprecated": false,
+      "implementation": "TRADE_ACCOUNT_RESPONSE"
+    },
+    {
+      "name": "EXCHANGE_LIST_REQUEST",
+      "id": 500,
+      "deprecated": false,
+      "implementation": "EXCHANGE_LIST_REQUEST"
+    },
+    {
+      "name": "EXCHANGE_LIST_RESPONSE",
+      "id": 501,
+      "deprecated": false,
+      "implementation": "EXCHANGE_LIST_RESPONSE"
+    },
+    {
+      "name": "SYMBOLS_FOR_EXCHANGE_REQUEST",
+      "id": 502,
+      "deprecated": false,
+      "implementation": "SYMBOLS_FOR_EXCHANGE_REQUEST"
+    },
+    {
+      "name": "UNDERLYING_SYMBOLS_FOR_EXCHANGE_REQUEST",
+      "id": 503,
+      "deprecated": false,
+      "implementation": "UNDERLYING_SYMBOLS_FOR_EXCHANGE_REQUEST"
+    },
+    {
+      "name": "SYMBOLS_FOR_UNDERLYING_REQUEST",
+      "id": 504,
+      "deprecated": false,
+      "implementation": "SYMBOLS_FOR_UNDERLYING_REQUEST"
+    },
+    {
+      "name": "SECURITY_DEFINITION_FOR_SYMBOL_REQUEST",
+      "id": 506,
+      "deprecated": false,
+      "implementation": "SECURITY_DEFINITION_FOR_SYMBOL_REQUEST"
+    },
+    {
+      "name": "SECURITY_DEFINITION_RESPONSE",
+      "id": 507,
+      "deprecated": false,
+      "implementation": "SECURITY_DEFINITION_RESPONSE"
+    },
+    {
+      "name": "SECURITY_DEFINITION_RESPONSE_V2",
+      "id": 510,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "SYMBOL_SEARCH_REQUEST",
+      "id": 508,
+      "deprecated": false,
+      "implementation": "SYMBOL_SEARCH_REQUEST"
+    },
+    {
+      "name": "SECURITY_DEFINITION_REJECT",
+      "id": 509,
+      "deprecated": false,
+      "implementation": "SECURITY_DEFINITION_REJECT"
+    },
+    {
+      "name": "ACCOUNT_BALANCE_REQUEST",
+      "id": 601,
+      "deprecated": false,
+      "implementation": "ACCOUNT_BALANCE_REQUEST"
+    },
+    {
+      "name": "ACCOUNT_BALANCE_REJECT",
+      "id": 602,
+      "deprecated": false,
+      "implementation": "ACCOUNT_BALANCE_REJECT"
+    },
+    {
+      "name": "ACCOUNT_BALANCE_UPDATE",
+      "id": 600,
+      "deprecated": false,
+      "implementation": "ACCOUNT_BALANCE_UPDATE"
+    },
+    {
+      "name": "ACCOUNT_BALANCE_ADJUSTMENT",
+      "id": 607,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "ACCOUNT_BALANCE_ADJUSTMENT_REJECT",
+      "id": 608,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "ACCOUNT_BALANCE_ADJUSTMENT_COMPLETE",
+      "id": 609,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_ACCOUNT_BALANCES_REQUEST",
+      "id": 603,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_ACCOUNT_BALANCES_REJECT",
+      "id": 604,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_ACCOUNT_BALANCE_RESPONSE",
+      "id": 606,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "USER_MESSAGE",
+      "id": 700,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "GENERAL_LOG_MESSAGE",
+      "id": 701,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "ALERT_MESSAGE",
+      "id": 702,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "JOURNAL_ENTRY_ADD",
+      "id": 703,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "JOURNAL_ENTRIES_REQUEST",
+      "id": 704,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "JOURNAL_ENTRIES_REJECT",
+      "id": 705,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "JOURNAL_ENTRY_RESPONSE",
+      "id": 706,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_PRICE_DATA_REQUEST",
+      "id": 800,
+      "deprecated": false,
+      "implementation": "HISTORICAL_PRICE_DATA_REQUEST"
+    },
+    {
+      "name": "HISTORICAL_PRICE_DATA_RESPONSE_HEADER",
+      "id": 801,
+      "deprecated": false,
+      "implementation": "HISTORICAL_PRICE_DATA_RESPONSE_HEADER"
+    },
+    {
+      "name": "HISTORICAL_PRICE_DATA_REJECT",
+      "id": 802,
+      "deprecated": false,
+      "implementation": "HISTORICAL_PRICE_DATA_REJECT"
+    },
+    {
+      "name": "HISTORICAL_PRICE_DATA_RECORD_RESPONSE",
+      "id": 803,
+      "deprecated": false,
+      "implementation": "HISTORICAL_PRICE_DATA_RECORD_RESPONSE"
+    },
+    {
+      "name": "HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE",
+      "id": 804,
+      "deprecated": false,
+      "implementation": "HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE"
+    },
+    {
+      "name": "HISTORICAL_PRICE_DATA_RESPONSE_TRAILER",
+      "id": 807,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_MARKET_DEPTH_DATA_REQUEST",
+      "id": 900,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_MARKET_DEPTH_DATA_RESPONSE_HEADER",
+      "id": 901,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_MARKET_DEPTH_DATA_REJECT",
+      "id": 902,
+      "deprecated": false,
+      "implementation": null
+    },
+    {
+      "name": "HISTORICAL_MARKET_DEPTH_DATA_RECORD_RESPONSE",
+      "id": 903,
+      "deprecated": false,
+      "implementation": null
+    }
+  ],
+  "structs": [
+    {
+      "name": "s_EncodingRequest",
+      "message": "ENCODING_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "ProtocolVersion",
+          "array": "",
+          "default": "CURRENT_VERSION"
+        },
+        {
+          "type": "EncodingEnum",
+          "name": "Encoding",
+          "array": "",
+          "default": "BINARY_ENCODING"
+        },
+        {
+          "type": "char",
+          "name": "ProtocolType",
+          "array": "[4]",
+          "default": "\"DTC\""
+        }
+      ]
+    },
+    {
+      "name": "s_EncodingResponse",
+      "message": "ENCODING_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "ProtocolVersion",
+          "array": "",
+          "default": "CURRENT_VERSION"
+        },
+        {
+          "type": "EncodingEnum",
+          "name": "Encoding",
+          "array": "",
+          "default": "BINARY_ENCODING"
+        },
+        {
+          "type": "char",
+          "name": "ProtocolType",
+          "array": "[4]",
+          "default": "\"DTC\""
+        }
+      ]
+    },
+    {
+      "name": "s_LogonRequest",
+      "message": "LOGON_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "ProtocolVersion",
+          "array": "",
+          "default": "CURRENT_VERSION"
+        },
+        {
+          "type": "char",
+          "name": "Username",
+          "array": "[USERNAME_PASSWORD_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Password",
+          "array": "[USERNAME_PASSWORD_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "GeneralTextData",
+          "array": "[GENERAL_IDENTIFIER_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "int32_t",
+          "name": "Integer_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "Integer_2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "HeartbeatIntervalInSeconds",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "Unused1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "HardwareIdentifier",
+          "array": "[GENERAL_IDENTIFIER_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientName",
+          "array": "[32]",
+          "default": "{}"
+        },
+        {
+          "type": "int32_t",
+          "name": "MarketDataTransmissionInterval",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_LogonResponse",
+      "message": "LOGON_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "ProtocolVersion",
+          "array": "",
+          "default": "CURRENT_VERSION"
+        },
+        {
+          "type": "LogonStatusEnum",
+          "name": "Result",
+          "array": "",
+          "default": "LOGON_SUCCESS"
+        },
+        {
+          "type": "char",
+          "name": "ResultText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ReconnectAddress",
+          "array": "[64]",
+          "default": "{}"
+        },
+        {
+          "type": "int32_t",
+          "name": "Integer_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "ServerName",
+          "array": "[60]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "MarketDepthUpdatesBestBidAndAsk",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "TradingIsSupported",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "OCOOrdersSupported",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "OrderCancelReplaceSupported",
+          "array": "",
+          "default": "1"
+        },
+        {
+          "type": "char",
+          "name": "SymbolExchangeDelimiter",
+          "array": "[SYMBOL_EXCHANGE_DELIMITER_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "SecurityDefinitionsSupported",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "HistoricalPriceDataSupported",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "ResubscribeWhenMarketDataFeedAvailable",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "MarketDepthIsSupported",
+          "array": "",
+          "default": "1"
+        },
+        {
+          "type": "uint8_t",
+          "name": "OneHistoricalPriceDataRequestPerConnection",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "BracketOrdersSupported",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Unused_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UsesMultiplePositionsPerSymbolAndTradeAccount",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "MarketDataSupported",
+          "array": "",
+          "default": "1"
+        }
+      ]
+    },
+    {
+      "name": "s_Logoff",
+      "message": "LOGOFF",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "Reason",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "DoNotReconnect",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_Heartbeat",
+      "message": "HEARTBEAT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "NumDroppedMessages",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "CurrentDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataFeedStatus",
+      "message": "MARKET_DATA_FEED_STATUS",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "MarketDataFeedStatusEnum",
+          "name": "Status",
+          "array": "",
+          "default": "MARKET_DATA_FEED_STATUS_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataFeedSymbolStatus",
+      "message": "MARKET_DATA_FEED_SYMBOL_STATUS",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "MarketDataFeedStatusEnum",
+          "name": "Status",
+          "array": "",
+          "default": "MARKET_DATA_FEED_STATUS_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_TradingSymbolStatus",
+      "message": "TRADING_SYMBOL_STATUS",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "TradingStatusEnum",
+          "name": "Status",
+          "array": "",
+          "default": "TRADING_STATUS_UNKNOWN"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataRequest",
+      "message": "MARKET_DATA_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "RequestActionEnum",
+          "name": "RequestAction",
+          "array": "",
+          "default": "SUBSCRIBE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint32_t",
+          "name": "IntervalForSnapshotUpdatesInMilliseconds",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDepthRequest",
+      "message": "MARKET_DEPTH_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "RequestActionEnum",
+          "name": "RequestAction",
+          "array": "",
+          "default": "SUBSCRIBE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "int32_t",
+          "name": "NumLevels",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataReject",
+      "message": "MARKET_DATA_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataSnapshot",
+      "message": "MARKET_DATA_SNAPSHOT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "SessionSettlementPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "SessionOpenPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "SessionHighPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "SessionLowPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "SessionVolume",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SessionNumTrades",
+          "array": "",
+          "default": "UINT_MAX"
+        },
+        {
+          "type": "uint32_t",
+          "name": "OpenInterest",
+          "array": "",
+          "default": "UINT_MAX"
+        },
+        {
+          "type": "double",
+          "name": "BidPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "AskPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "AskQuantity",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "BidQuantity",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "LastTradePrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "LastTradeVolume",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "LastTradeDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "BidAskDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "SessionSettlementDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "TradingSessionDate",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "TradingStatusEnum",
+          "name": "TradingStatus",
+          "array": "",
+          "default": "TRADING_STATUS_UNKNOWN"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "MarketDepthUpdateDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDepthSnapshotLevel",
+      "message": "MARKET_DEPTH_SNAPSHOT_LEVEL",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum",
+          "name": "Side",
+          "array": "",
+          "default": "BID_ASK_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Level",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFirstMessageInBatch",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsLastMessageInBatch",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "NumOrders",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDepthSnapshotLevelFloat",
+      "message": "MARKET_DEPTH_SNAPSHOT_LEVEL_FLOAT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "NumOrders",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Level",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum8",
+          "name": "Side",
+          "array": "",
+          "default": "BID_ASK_UNSET_8"
+        },
+        {
+          "type": "FinalUpdateInBatchEnum",
+          "name": "FinalUpdateInBatch",
+          "array": "",
+          "default": "FINAL_UPDATE_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDepthUpdateLevelV2",
+      "message": "MARKET_DEPTH_UPDATE_LEVEL_V2",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMillisecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint16_t",
+          "name": "NumOrders",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Level",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum8",
+          "name": "Side",
+          "array": "",
+          "default": "BID_ASK_UNSET_8"
+        },
+        {
+          "type": "MarketDepthUpdateTypeEnum",
+          "name": "UpdateType",
+          "array": "",
+          "default": "MARKET_DEPTH_UNSET"
+        },
+        {
+          "type": "FinalUpdateInBatchEnum",
+          "name": "FinalUpdateInBatch",
+          "array": "",
+          "default": "FINAL_UPDATE_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDepthUpdateLevelFloatWithMilliseconds",
+      "message": "MARKET_DEPTH_UPDATE_LEVEL_FLOAT_WITH_MILLISECONDS",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMillisecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum8",
+          "name": "Side",
+          "array": "",
+          "default": "BID_ASK_UNSET_8"
+        },
+        {
+          "type": "MarketDepthUpdateTypeEnum",
+          "name": "UpdateType",
+          "array": "",
+          "default": "MARKET_DEPTH_UNSET"
+        },
+        {
+          "type": "uint16_t",
+          "name": "NumOrders",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "FinalUpdateInBatchEnum",
+          "name": "FinalUpdateInBatch",
+          "array": "",
+          "default": "FINAL_UPDATE_UNSET"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Level",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateSessionSettlement",
+      "message": "MARKET_DATA_UPDATE_SESSION_SETTLEMENT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateSessionOpen",
+      "message": "MARKET_DATA_UPDATE_SESSION_OPEN",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "TradingSessionDate",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateSessionNumTrades",
+      "message": "MARKET_DATA_UPDATE_SESSION_NUM_TRADES",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "NumTrades",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "TradingSessionDate",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateTradingSessionDate",
+      "message": "MARKET_DATA_UPDATE_TRADING_SESSION_DATE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "Date",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDepthReject",
+      "message": "MARKET_DEPTH_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateTrade",
+      "message": "MARKET_DATA_UPDATE_TRADE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum",
+          "name": "AtBidOrAsk",
+          "array": "",
+          "default": "BID_ASK_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateTradeWithUnbundledIndicator",
+      "message": "MARKET_DATA_UPDATE_TRADE_WITH_UNBUNDLED_INDICATOR",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum8",
+          "name": "AtBidOrAsk",
+          "array": "",
+          "default": "BID_ASK_UNSET_8"
+        },
+        {
+          "type": "UnbundledTradeIndicatorEnum",
+          "name": "UnbundledTradeIndicator",
+          "array": "",
+          "default": "UNBUNDLED_TRADE_NONE"
+        },
+        {
+          "type": "uint8_t",
+          "name": "TradeCondition",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Reserve_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Reserve_2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Reserve_3",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateTradeWithUnbundledIndicator2",
+      "message": "MARKET_DATA_UPDATE_TRADE_WITH_UNBUNDLED_INDICATOR_2",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum8",
+          "name": "AtBidOrAsk",
+          "array": "",
+          "default": "BID_ASK_UNSET_8"
+        },
+        {
+          "type": "UnbundledTradeIndicatorEnum",
+          "name": "UnbundledTradeIndicator",
+          "array": "",
+          "default": "UNBUNDLED_TRADE_NONE"
+        },
+        {
+          "type": "t_TradeCondition",
+          "name": "TradeCondition",
+          "array": "",
+          "default": "TRADE_CONDITION_NONE"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateTradeV2",
+      "message": "MARKET_DATA_UPDATE_TRADE_V2",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum8",
+          "name": "AtBidOrAsk",
+          "array": "",
+          "default": "BID_ASK_UNSET_8"
+        },
+        {
+          "type": "UnbundledTradeIndicatorEnum",
+          "name": "UnbundledTradeIndicator",
+          "array": "",
+          "default": "UNBUNDLED_TRADE_NONE"
+        },
+        {
+          "type": "t_TradeCondition",
+          "name": "TradeCondition",
+          "array": "",
+          "default": "TRADE_CONDITION_NONE"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateBidAsk",
+      "message": "MARKET_DATA_UPDATE_BID_ASK",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "BidPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "float",
+          "name": "BidQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "AskPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "float",
+          "name": "AskQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateBidAskCompact",
+      "message": "MARKET_DATA_UPDATE_BID_ASK_COMPACT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "float",
+          "name": "BidPrice",
+          "array": "",
+          "default": "FLT_MAX"
+        },
+        {
+          "type": "float",
+          "name": "BidQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "AskPrice",
+          "array": "",
+          "default": "FLT_MAX"
+        },
+        {
+          "type": "float",
+          "name": "AskQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateBidAskFloatWithMicroseconds",
+      "message": "MARKET_DATA_UPDATE_BID_ASK_FLOAT_WITH_MICROSECONDS",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "BidPrice",
+          "array": "",
+          "default": "FLT_MAX"
+        },
+        {
+          "type": "float",
+          "name": "BidQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "AskPrice",
+          "array": "",
+          "default": "FLT_MAX"
+        },
+        {
+          "type": "float",
+          "name": "AskQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateBidAskV2",
+      "message": "MARKET_DATA_UPDATE_BID_ASK_DOUBLE_WITH_MICROSECONDS",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "BidPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "BidQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "AskPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "AskQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateTradeCompact",
+      "message": "MARKET_DATA_UPDATE_TRADE_COMPACT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "float",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum",
+          "name": "AtBidOrAsk",
+          "array": "",
+          "default": "BID_ASK_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateSessionVolume",
+      "message": "MARKET_DATA_UPDATE_SESSION_VOLUME",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "TradingSessionDate",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalSessionVolume",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateOpenInterest",
+      "message": "MARKET_DATA_UPDATE_OPEN_INTEREST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "OpenInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "TradingSessionDate",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateSessionHigh",
+      "message": "MARKET_DATA_UPDATE_SESSION_HIGH",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "TradingSessionDate",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateSessionLow",
+      "message": "MARKET_DATA_UPDATE_SESSION_LOW",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "TradingSessionDate",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketDataUpdateLastTradeSnapshot",
+      "message": "MARKET_DATA_UPDATE_LAST_TRADE_SNAPSHOT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "LastTradePrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "LastTradeVolume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "LastTradeDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketOrdersRequest",
+      "message": "MARKET_ORDERS_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "RequestActionEnum",
+          "name": "RequestAction",
+          "array": "",
+          "default": "SUBSCRIBE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "int32_t",
+          "name": "SendQuantitiesGreaterOrEqualTo",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketOrdersReject",
+      "message": "MARKET_ORDERS_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketOrdersAdd",
+      "message": "MARKET_ORDERS_ADD",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "DTC::BuySellEnum",
+          "name": "Side",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint64_t",
+          "name": "OrderID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketOrdersModify",
+      "message": "MARKET_ORDERS_MODIFY",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "DTC::BuySellEnum",
+          "name": "Side",
+          "array": "",
+          "default": "DTC::BUY_SELL_UNSET"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint64_t",
+          "name": "OrderID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "PriorPrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "PriorQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint64_t",
+          "name": "PriorOrderID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketOrdersRemove",
+      "message": "MARKET_ORDERS_REMOVE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint64_t",
+          "name": "OrderID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "DTC::BuySellEnum",
+          "name": "Side",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_MarketOrdersSnapshotMessageBoundary",
+      "message": "MARKET_ORDERS_SNAPSHOT_MESSAGE_BOUNDARY",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SymbolID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "MessageSetBoundaryEnum",
+          "name": "MessageBoundary",
+          "array": "",
+          "default": "MESSAGE_SET_BOUNDARY_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_SubmitNewSingleOrder",
+      "message": "SUBMIT_NEW_SINGLE_ORDER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OrderTypeEnum",
+          "name": "OrderType",
+          "array": "",
+          "default": "ORDER_TYPE_UNSET"
+        },
+        {
+          "type": "BuySellEnum",
+          "name": "BuySell",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "TimeInForceEnum",
+          "name": "TimeInForce",
+          "array": "",
+          "default": "TIF_UNSET"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "GoodTillDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsAutomatedOrder",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsParentOrder",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "FreeFormText",
+          "array": "[ORDER_FREE_FORM_TEXT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OpenCloseTradeEnum",
+          "name": "OpenOrClose",
+          "array": "",
+          "default": "TRADE_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "MaxShowQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Price1AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Price2AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "IntendedPositionQuantity",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_SubmitFlattenPositionOrder",
+      "message": "SUBMIT_FLATTEN_POSITION_ORDER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "FreeFormText",
+          "array": "[ORDER_FREE_FORM_TEXT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsAutomatedOrder",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_CancelReplaceOrder",
+      "message": "CANCEL_REPLACE_ORDER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "ServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "Price1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Price1IsSet",
+          "array": "",
+          "default": "1"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Price2IsSet",
+          "array": "",
+          "default": "1"
+        },
+        {
+          "type": "int32_t",
+          "name": "Unused",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "TimeInForceEnum",
+          "name": "TimeInForce",
+          "array": "",
+          "default": "TIF_UNSET"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "GoodTillDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UpdatePrice1OffsetToParent",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Price1AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Price2AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_CancelOrder",
+      "message": "CANCEL_ORDER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "ServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_SubmitNewOCOOrder",
+      "message": "SUBMIT_NEW_OCO_ORDER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID_1",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OrderTypeEnum",
+          "name": "OrderType_1",
+          "array": "",
+          "default": "ORDER_TYPE_UNSET"
+        },
+        {
+          "type": "BuySellEnum",
+          "name": "BuySell_1",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price1_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price2_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Quantity_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID_2",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OrderTypeEnum",
+          "name": "OrderType_2",
+          "array": "",
+          "default": "ORDER_TYPE_UNSET"
+        },
+        {
+          "type": "BuySellEnum",
+          "name": "BuySell_2",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price1_2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Price2_2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Quantity_2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "TimeInForceEnum",
+          "name": "TimeInForce",
+          "array": "",
+          "default": "TIF_UNSET"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "GoodTillDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsAutomatedOrder",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "ParentTriggerClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "FreeFormText",
+          "array": "[ORDER_FREE_FORM_TEXT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OpenCloseTradeEnum",
+          "name": "OpenOrClose",
+          "array": "",
+          "default": "TRADE_UNSET"
+        },
+        {
+          "type": "PartialFillHandlingEnum",
+          "name": "PartialFillHandling",
+          "array": "",
+          "default": "PARTIAL_FILL_UNSET"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseOffsets",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "OffsetFromParent1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "OffsetFromParent2",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "MaintainSamePricesOnParentFill",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Price1_1AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Price2_1AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Price1_2AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Price2_2AsString",
+          "array": "[PRICE_STRING_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_OpenOrdersRequest",
+      "message": "OPEN_ORDERS_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestAllOrders",
+          "array": "",
+          "default": "1"
+        },
+        {
+          "type": "char",
+          "name": "ServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalOrderFillsRequest",
+      "message": "HISTORICAL_ORDER_FILLS_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "ServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "int32_t",
+          "name": "NumberOfDays",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "StartDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalOrderFillsReject",
+      "message": "HISTORICAL_ORDER_FILLS_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_CurrentPositionsRequest",
+      "message": "CURRENT_POSITIONS_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_CurrentPositionsReject",
+      "message": "CURRENT_POSITIONS_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_OrderUpdate",
+      "message": "ORDER_UPDATE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "TotalNumMessages",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "MessageNumber",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "PreviousServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ExchangeOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OrderStatusEnum",
+          "name": "OrderStatus",
+          "array": "",
+          "default": "ORDER_STATUS_UNSPECIFIED"
+        },
+        {
+          "type": "OrderUpdateReasonEnum",
+          "name": "OrderUpdateReason",
+          "array": "",
+          "default": "ORDER_UPDATE_REASON_UNSET"
+        },
+        {
+          "type": "OrderTypeEnum",
+          "name": "OrderType",
+          "array": "",
+          "default": "ORDER_TYPE_UNSET"
+        },
+        {
+          "type": "BuySellEnum",
+          "name": "BuySell",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price1",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "Price2",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "TimeInForceEnum",
+          "name": "TimeInForce",
+          "array": "",
+          "default": "TIF_UNSET"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "GoodTillDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "OrderQuantity",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "FilledQuantity",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "RemainingQuantity",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "AverageFillPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "double",
+          "name": "LastFillPrice",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "t_DateTimeWithMillisecondsInt",
+          "name": "LastFillDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "LastFillQuantity",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "char",
+          "name": "LastFillExecutionID",
+          "array": "[64]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "InfoText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "NoOrders",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "ParentServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "OCOLinkedOrderServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OpenCloseTradeEnum",
+          "name": "OpenOrClose",
+          "array": "",
+          "default": "TRADE_UNSET"
+        },
+        {
+          "type": "char",
+          "name": "PreviousClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "FreeFormText",
+          "array": "[ORDER_FREE_FORM_TEXT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "OrderReceivedDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "LatestTransactionDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Username",
+          "array": "[USERNAME_PASSWORD_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_OpenOrdersReject",
+      "message": "OPEN_ORDERS_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalOrderFillResponse",
+      "message": "HISTORICAL_ORDER_FILL_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "TotalNumberMessages",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "MessageNumber",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ServerOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "BuySellEnum",
+          "name": "BuySell",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "UniqueExecutionID",
+          "array": "[ORDER_FILL_EXECUTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "OpenCloseTradeEnum",
+          "name": "OpenClose",
+          "array": "",
+          "default": "TRADE_UNSET"
+        },
+        {
+          "type": "uint8_t",
+          "name": "NoOrderFills",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "InfoText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "HighPriceDuringPosition",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "LowPriceDuringPosition",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "PositionQuantity",
+          "array": "",
+          "default": "DBL_MAX"
+        },
+        {
+          "type": "char",
+          "name": "Username",
+          "array": "[USERNAME_PASSWORD_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ExchangeOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "SenderSubID",
+          "array": "[USERNAME_PASSWORD_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_PositionUpdate",
+      "message": "POSITION_UPDATE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "TotalNumberMessages",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "MessageNumber",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "AveragePrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "PositionIdentifier",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "NoPositions",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Unsolicited",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "MarginRequirement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "DTC::t_DateTime4Byte",
+          "name": "EntryDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "OpenProfitLoss",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "HighPriceDuringPosition",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "LowPriceDuringPosition",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "QuantityLimit",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "MaxPotentialPostionQuantity",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_AddCorrectingOrderFill",
+      "message": "ADD_CORRECTING_ORDER_FILL",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "DTC::BuySellEnum",
+          "name": "BuySell",
+          "array": "",
+          "default": "BUY_SELL_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "FillPrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "FillQuantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "FreeFormText",
+          "array": "[ORDER_FREE_FORM_TEXT_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_CorrectingOrderFillResponse",
+      "message": "CORRECTING_ORDER_FILL_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "ClientOrderID",
+          "array": "[ORDER_ID_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "ResultText",
+          "array": "[TEXT_MESSAGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsError",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_TradeAccountsRequest",
+      "message": "TRADE_ACCOUNTS_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_TradeAccountResponse",
+      "message": "TRADE_ACCOUNT_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "TotalNumberMessages",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "MessageNumber",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "TradingIsDisabled",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_ExchangeListRequest",
+      "message": "EXCHANGE_LIST_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_ExchangeListResponse",
+      "message": "EXCHANGE_LIST_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalMessage",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Description",
+          "array": "[EXCHANGE_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_SymbolsForExchangeRequest",
+      "message": "SYMBOLS_FOR_EXCHANGE_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "SecurityTypeEnum",
+          "name": "SecurityType",
+          "array": "",
+          "default": "SECURITY_TYPE_UNSET"
+        },
+        {
+          "type": "RequestActionEnum",
+          "name": "RequestAction",
+          "array": "",
+          "default": "SUBSCRIBE"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_UnderlyingSymbolsForExchangeRequest",
+      "message": "UNDERLYING_SYMBOLS_FOR_EXCHANGE_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "SecurityTypeEnum",
+          "name": "SecurityType",
+          "array": "",
+          "default": "SECURITY_TYPE_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_SymbolsForUnderlyingRequest",
+      "message": "SYMBOLS_FOR_UNDERLYING_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "UnderlyingSymbol",
+          "array": "[UNDERLYING_SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "SecurityTypeEnum",
+          "name": "SecurityType",
+          "array": "",
+          "default": "SECURITY_TYPE_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_SymbolSearchRequest",
+      "message": "SYMBOL_SEARCH_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "SearchText",
+          "array": "[SYMBOL_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "SecurityTypeEnum",
+          "name": "SecurityType",
+          "array": "",
+          "default": "SECURITY_TYPE_UNSET"
+        },
+        {
+          "type": "SearchTypeEnum",
+          "name": "SearchType",
+          "array": "",
+          "default": "SEARCH_TYPE_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_SecurityDefinitionForSymbolRequest",
+      "message": "SECURITY_DEFINITION_FOR_SYMBOL_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_SecurityDefinitionResponse",
+      "message": "SECURITY_DEFINITION_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "SecurityTypeEnum",
+          "name": "SecurityType",
+          "array": "",
+          "default": "SECURITY_TYPE_UNSET"
+        },
+        {
+          "type": "char",
+          "name": "Description",
+          "array": "[SYMBOL_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "float",
+          "name": "MinPriceIncrement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "PriceDisplayFormatEnum",
+          "name": "PriceDisplayFormat",
+          "array": "",
+          "default": "PRICE_DISPLAY_FORMAT_UNSET"
+        },
+        {
+          "type": "float",
+          "name": "CurrencyValuePerIncrement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalMessage",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "FloatToIntPriceMultiplier",
+          "array": "",
+          "default": "1.0"
+        },
+        {
+          "type": "float",
+          "name": "IntToFloatPriceDivisor",
+          "array": "",
+          "default": "1.0"
+        },
+        {
+          "type": "char",
+          "name": "UnderlyingSymbol",
+          "array": "[UNDERLYING_SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UpdatesBidAskOnly",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "StrikePrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "PutCallEnum",
+          "name": "PutOrCall",
+          "array": "",
+          "default": "PC_UNSET"
+        },
+        {
+          "type": "uint32_t",
+          "name": "ShortInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "SecurityExpirationDate",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "BuyRolloverInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "SellRolloverInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "EarningsPerShare",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SharesOutstanding",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "IntToFloatQuantityDivisor",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "HasMarketDepthData",
+          "array": "",
+          "default": "1"
+        },
+        {
+          "type": "float",
+          "name": "DisplayPriceMultiplier",
+          "array": "",
+          "default": "1.0"
+        },
+        {
+          "type": "char",
+          "name": "ExchangeSymbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "float",
+          "name": "InitialMarginRequirement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "MaintenanceMarginRequirement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Currency",
+          "array": "[CURRENCY_CODE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "float",
+          "name": "ContractSize",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "OpenInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "RolloverDate",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsDelayed",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int64_t",
+          "name": "SecurityIdentifier",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "ProductIdentifier",
+          "array": "[GENERAL_IDENTIFIER_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_SecurityDefinitionResponseV2",
+      "message": "SECURITY_DEFINITION_RESPONSE_V2",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "SecurityTypeEnum",
+          "name": "SecurityType",
+          "array": "",
+          "default": "SECURITY_TYPE_UNSET"
+        },
+        {
+          "type": "PriceDisplayFormatEnum",
+          "name": "PriceDisplayFormat",
+          "array": "",
+          "default": "PRICE_DISPLAY_FORMAT_UNSET"
+        },
+        {
+          "type": "char",
+          "name": "Description",
+          "array": "[SYMBOL_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "MinPriceIncrement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "CurrencyValuePerIncrement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "FloatToIntPriceMultiplier",
+          "array": "",
+          "default": "1.0"
+        },
+        {
+          "type": "double",
+          "name": "IntToFloatPriceDivisor",
+          "array": "",
+          "default": "1.0"
+        },
+        {
+          "type": "char",
+          "name": "UnderlyingSymbol",
+          "array": "[UNDERLYING_SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalMessage",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UpdatesBidAskOnly",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "PutCallEnum",
+          "name": "PutOrCall",
+          "array": "",
+          "default": "PC_UNSET"
+        },
+        {
+          "type": "uint8_t",
+          "name": "HasMarketDepthData",
+          "array": "",
+          "default": "1"
+        },
+        {
+          "type": "uint32_t",
+          "name": "SharesOutstanding",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "StrikePrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "ShortInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "SecurityExpirationDate",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "BuyRolloverInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "SellRolloverInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "EarningsPerShare",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "IntToFloatQuantityDivisor",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "DisplayPriceMultiplier",
+          "array": "",
+          "default": "1.0"
+        },
+        {
+          "type": "char",
+          "name": "ExchangeSymbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "InitialMarginRequirement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "MaintenanceMarginRequirement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Currency",
+          "array": "[CURRENCY_CODE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "ContractSize",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "OpenInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime4Byte",
+          "name": "RolloverDate",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int64_t",
+          "name": "SecurityIdentifier",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "ProductIdentifier",
+          "array": "[GENERAL_IDENTIFIER_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsDelayed",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_SecurityDefinitionReject",
+      "message": "SECURITY_DEFINITION_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_AccountBalanceRequest",
+      "message": "ACCOUNT_BALANCE_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_AccountBalanceReject",
+      "message": "ACCOUNT_BALANCE_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_AccountBalanceUpdate",
+      "message": "ACCOUNT_BALANCE_UPDATE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "CashBalance",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "BalanceAvailableForNewPositions",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "AccountCurrency",
+          "array": "[8]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "SecuritiesValue",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "MarginRequirement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "TotalNumberMessages",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int32_t",
+          "name": "MessageNumber",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "NoAccountBalances",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Unsolicited",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "OpenPositionsProfitLoss",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "DailyProfitLoss",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "InfoText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint64_t",
+          "name": "TransactionIdentifier",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "DailyNetLossLimit",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "TrailingAccountValueToLimitPositions",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "DailyNetLossLimitReached",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsUnderRequiredMargin",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "ClosePositionsAtEndOfDay",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "TradingIsDisabled",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Description",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsUnderRequiredAccountValue",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "TransactionDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "MarginRequirementFull",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "MarginRequirementFullPositionsOnly",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "PeakMarginRequirement",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "IntroducingBroker",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "OpenPositionsProfitLossBasedOnSettlementPrice",
+          "array": "",
+          "default": "0.0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "LastOrderActivityDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_AccountBalanceAdjustment",
+      "message": "ACCOUNT_BALANCE_ADJUSTMENT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "CreditAmount",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "DebitAmount",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Currency",
+          "array": "[CURRENCY_CODE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Reason",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "RecalculateDailyLossLimit",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_AccountBalanceAdjustmentReject",
+      "message": "ACCOUNT_BALANCE_ADJUSTMENT_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_AccountBalanceAdjustmentComplete",
+      "message": "ACCOUNT_BALANCE_ADJUSTMENT_COMPLETE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "int64_t",
+          "name": "TransactionID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "double",
+          "name": "NewBalance",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalAccountBalancesRequest",
+      "message": "HISTORICAL_ACCOUNT_BALANCES_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "StartDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalAccountBalancesReject",
+      "message": "HISTORICAL_ACCOUNT_BALANCES_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalAccountBalanceResponse",
+      "message": "HISTORICAL_ACCOUNT_BALANCE_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "CashBalance",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "AccountCurrency",
+          "array": "[8]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalResponse",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "NoAccountBalances",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "InfoText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TransactionId",
+          "array": "[GENERAL_IDENTIFIER_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_UserMessage",
+      "message": "USER_MESSAGE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "UserMessage",
+          "array": "[TEXT_MESSAGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsPopupMessage",
+          "array": "",
+          "default": "1"
+        }
+      ]
+    },
+    {
+      "name": "s_GeneralLogMessage",
+      "message": "GENERAL_LOG_MESSAGE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "MessageText",
+          "array": "[128]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_AlertMessage",
+      "message": "ALERT_MESSAGE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "MessageText",
+          "array": "[128]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "TradeAccount",
+          "array": "[TRADE_ACCOUNT_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_JournalEntryAdd",
+      "message": "JOURNAL_ENTRY_ADD",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "JournalEntry",
+          "array": "[TEXT_MESSAGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_JournalEntriesRequest",
+      "message": "JOURNAL_ENTRIES_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "StartDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_JournalEntriesReject",
+      "message": "JOURNAL_ENTRIES_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        }
+      ]
+    },
+    {
+      "name": "s_JournalEntryResponse",
+      "message": "JOURNAL_ENTRY_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "char",
+          "name": "JournalEntry",
+          "array": "[TEXT_MESSAGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalResponse",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalPriceDataRequest",
+      "message": "HISTORICAL_PRICE_DATA_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "HistoricalDataIntervalEnum",
+          "name": "RecordInterval",
+          "array": "",
+          "default": "INTERVAL_TICK"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "StartDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTime",
+          "name": "EndDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "MaxDaysToReturn",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibCompression",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "RequestDividendAdjustedStockData",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Integer_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibNGCompression",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalPriceDataResponseHeader",
+      "message": "HISTORICAL_PRICE_DATA_RESPONSE_HEADER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "HistoricalDataIntervalEnum",
+          "name": "RecordInterval",
+          "array": "",
+          "default": "INTERVAL_TICK"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibCompression",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "NoRecordsToReturn",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "IntToFloatPriceDivisor",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibNGCompression",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalPriceDataReject",
+      "message": "HISTORICAL_PRICE_DATA_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "HistoricalPriceDataRejectReasonCodeEnum",
+          "name": "RejectReasonCode",
+          "array": "",
+          "default": "HPDR_UNSET"
+        },
+        {
+          "type": "uint16_t",
+          "name": "RetryTimeInSeconds",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalPriceDataRecordResponse",
+      "message": "HISTORICAL_PRICE_DATA_RECORD_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "StartDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "OpenPrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "HighPrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "LowPrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "LastPrice",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "OpenInterest",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "NumTrades",
+          "array": "",
+          "default": "union alias"
+        },
+        {
+          "type": "double",
+          "name": "BidVolume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "AskVolume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalRecord",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalPriceDataTickRecordResponse",
+      "message": "HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMilliseconds",
+          "name": "DateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "AtBidOrAskEnum",
+          "name": "AtBidOrAsk",
+          "array": "",
+          "default": "BID_ASK_UNSET"
+        },
+        {
+          "type": "double",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "double",
+          "name": "Volume",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalRecord",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalPriceDataResponseTrailer",
+      "message": "HISTORICAL_PRICE_DATA_RESPONSE_TRAILER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "FinalRecordLastDateTime",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalMarketDepthDataRequest",
+      "message": "HISTORICAL_MARKET_DEPTH_DATA_REQUEST",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "Symbol",
+          "array": "[SYMBOL_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "char",
+          "name": "Exchange",
+          "array": "[EXCHANGE_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "StartDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "EndDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibCompression",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Integer_1",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibNGCompression",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalMarketDepthDataResponseHeader",
+      "message": "HISTORICAL_MARKET_DEPTH_DATA_RESPONSE_HEADER",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibCompression",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "NoRecordsToReturn",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "UseZLibNGCompression",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalMarketDepthDataReject",
+      "message": "HISTORICAL_MARKET_DEPTH_DATA_REJECT",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "char",
+          "name": "RejectText",
+          "array": "[TEXT_DESCRIPTION_LENGTH]",
+          "default": "{}"
+        },
+        {
+          "type": "HistoricalPriceDataRejectReasonCodeEnum",
+          "name": "RejectReasonCode",
+          "array": "",
+          "default": "DTC::HPDR_UNSET"
+        }
+      ]
+    },
+    {
+      "name": "s_HistoricalMarketDepthDataRecordResponse",
+      "message": "HISTORICAL_MARKET_DEPTH_DATA_RECORD_RESPONSE",
+      "fields": [
+        {
+          "type": "uint16_t",
+          "name": "Size",
+          "array": "",
+          "default": "sizeof(*this)"
+        },
+        {
+          "type": "uint16_t",
+          "name": "Type",
+          "array": "",
+          "default": "MESSAGE_TYPE"
+        },
+        {
+          "type": "int32_t",
+          "name": "RequestID",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "t_DateTimeWithMicrosecondsInt",
+          "name": "StartDateTime",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Command",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "Flags",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint16_t",
+          "name": "NumOrders",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "float",
+          "name": "Price",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint32_t",
+          "name": "Quantity",
+          "array": "",
+          "default": "0"
+        },
+        {
+          "type": "uint8_t",
+          "name": "IsFinalRecord",
+          "array": "",
+          "default": "0"
+        }
+      ]
+    }
+  ]
+}

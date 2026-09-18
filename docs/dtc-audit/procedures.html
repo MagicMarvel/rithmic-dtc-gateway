@@ -1,0 +1,1340 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <meta name="description" content="Sierra Chart is a professional Trading platform for the financial markets. Supporting Manual, Automated and Simulated Trading." >
+        <meta name="keywords" content="online trading platform, charting software, futures, stock, forex, discretionary trading, automated trading, trade simulator, trading system development, trading strategy development" >     
+        
+        <link rel="stylesheet" type="text/css" href="/includes/Minified.css" >
+        
+        <link rel="icon" type="image/png" sizes="192x192" href="favicon/favicon-192x192.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+        
+        <script type="text/javascript" src="/jscripts/jquery-3.7.1.min.js"></script>
+        
+        <script type="text/javascript">
+
+    function HasPageBeenModified(filemtime = '1786718971') {
+        $.ajax({
+            url: '/Ajax.php',
+            type: 'post',
+            data: {
+              'Service': 'Page',
+              'Do': 'HasPageBeenModified',
+              'filemtime': filemtime,
+              'FileName': 'doc/DTCMessageDocumentation.php',
+            },
+            success: function(data, status) {
+              if(data['result'] == "NewPageEdits" && data['Content']) {
+                    $('#NewPageEdits').remove();
+                    $('#container').append('<div id="NewPageEdits">'+data['Content']+'</div>')
+                    $('#NewPageEdits').dialog({
+                        width: 150,
+                        position: { at: 'right-96 top-5%'},
+                        modal: false,
+                        resizable: false,
+                        create: function (event, ui) { $(event.target).parent().css('position', 'fixed'); }
+                    });
+
+                    $(".ui-dialog-titlebar").hide();
+              }
+            },
+            error: function(xhr, desc, err) {
+              console.log(xhr);
+              console.log("Details: " + desc + " | Error:" + err);
+            }
+        });
+
+    }
+
+    window.setInterval(HasPageBeenModified , 900000);
+
+</script>
+
+        <title>DTC Messages and Procedures -  Sierra Chart</title>
+    </head>               
+    <body>
+        <div id="container">
+            <div id="banner" class="pure-g">
+    <div class="pure-u-1 pure-u-md-1-3">
+        <a href="https://www.sierrachart.com"><img src="https://www.sierrachart.com/images/Logo/SierraChartLogo.png" alt="Sierra Chart - Financial Market Charting and Trading Software" class="logo"></a>
+    </div>
+    <div class="pure-u-1 pure-u-md-2-3">
+        <div class="pure-g">
+            <div class="pure-u-1-2" style="text-align: right;">
+            <div class="pure-form CSSDarkMode">
+    <form action="/index.php?page=doc/DTCMessageDocumentation.php" method="POST">
+        <input type="hidden" name="DarkMode" value="On">
+        <button type="submit" class="pure-button pure-button-primary">Toggle Dark Mode</button>
+    </form>
+</div>
+            </div>            
+            <div class="pure-u-1-2">
+            <div class="pure-form SearchBar">
+    <form action="https://search2.sierrachart.com/" method="GET">
+        <input name="Query" value="" type="text" placeholder="Find" size="25">
+        <input type="hidden" name="submitted" value="true">
+        <input type="submit" value="Search" class="pure-button">
+    </form>
+</div>
+            </div>
+            <div class="pure-u-1">
+                <h2 class="title">Sierra Chart</h2> 
+                <p class="tagline">Financial Markets Charting and Trading Platform</p>    
+            </div>
+        </div>
+    </div>
+</div>
+            <div class="pure-menu pure-menu-horizontal top-nav-bar">
+    <ul class="pure-menu-list">
+        <li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Main</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/">Home</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SoftwareDownload.php">Software Download</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Whats_New.php">What Is New</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Features.php">Features</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Image_gallery.php">User Image Gallery</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/AdditionalFiles.php">Additional Files</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/AboutUs.php" >About Us</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/OtherSitesLinks.php">Other Websites</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Documentation</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Contents.php">Table of Contents</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/help.php">Frequently Asked Questions</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/setup.php">Sierra Chart Setup Instructions</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/VideoLibrary.php">Video Library</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Whats_New.php">What Is New</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/DevelopingCustomStudiesAndSystems.php">Developing for Sierra Chart</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/BrokerServices.html">Services for Brokers</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Getting Started</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/setup.php">Sierra Chart Setup Instructions</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SoftwareDownload.php">Software Download</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/helpdetails59.php">What Is Included in Free Trial</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/FuturesData.php">Understanding Real-time  Futures Data</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Account Management</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/RegisterStep1.php">Create Account</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php#MoveToTop">Account Control Panel</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php?page=AddAccountCredit#MoveToTop">Make a Payment</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php?page=ServicesActivation#MoveToTop">Activate Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/PurchaseInformation.php">License and Purchase Info</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/Packages.php">Pricing</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/PasswordReset.php">Account Password Reset</a></li>
+            </ul>
+        </li><li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            <a class="pure-menu-link pure-button-active" style="color: #000;">Support</a>
+            <ul class="pure-menu-children">
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/support.html">Contact</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/SupportBoard.php">* Support Board *</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SelfHelp.php&Source=Ticket">Self Help/Account Support Tickets</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SupportedDataAndTradingServices.php">Data/Trade Services</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SoftwareDownload.php">Software Download</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php">Account Control Panel</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/index.php?page=doc/SierraChartStudyAndSystemProgrammers.php">Study and System Programmers</a></li>
+                <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.sierrachart.com/UserControlPanel.php?page=StudyStore#MoveToTop">Custom Studies Store/List</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+                        
+<form action="/UserControlPanel.php#loginForm" method="post" style="margin-top:3.1em;" class="SmallLoginLogOutForm" title="Enter your Sierra Chart Account Name and Password.">
+    <input class="TextInput" name="username" placeholder="SC Account Name">
+    <input class="TextInput" name="password" type="password">
+    <input type="submit" value="Login" >
+    <input type="hidden" name="RedirectTo" value="/index.php?page=doc/DTCMessageDocumentation.php" >
+    <a href="/UserControlPanel.php" target="_blank" rel="noopener noreferrer">Login Page</a>
+     - <a href="https://www.sierrachart.com/RegisterStep1.php">Create Account</a>
+    
+</form>
+
+            <div class="content">
+<div class="HierarchyLinks"> <h4 id="top"><a href="/">Home</a> &gt;&gt; <a  href="/index.php?page=doc/DTCMessageDocumentation.php">Getting Started</a></h4> </div>     <h1 class="PageName">DTC Messages and Procedures</h1>
+
+
+<a href="/images/Logo/Logo_DTC_Protocol.png" rel="lightbox"><img src="/images/Logo/Logo_DTC_Protocol.png" class="WideFloatRight"  alt="DTC Logo" ></a>
+
+<ul>
+    <li><a href="#Introduction">Introduction</a></li>
+    <li><a href="#DTCProtocolProcedures">DTC Protocol Procedures</a>
+        <ul>
+            <li><a href="#SupportOfDTCMessages">Client and Server Support of DTC Messages</a></li>
+            <li><a href="#MessageStructure">Message Structure</a></li>
+
+            <li><a href="#GetSetFunctions">Get and Set Functions</a></li>
+            <li><a href="#HandlingNetworkData">Handling Network Data</a></li>
+            <li><a href="#Versioning">Versioning</a>
+				<ul>
+					<li><a href="#BinaryEncodingWithFixedLengthStrings">Binary Encoding with Fixed Length Strings</a></li>
+					<li><a href="#BinaryEncodingWithVariableLengthStrings">Binary Encoding with Variable Length Strings</a></li>
+					<li><a href="#ProtocolBufferEncoding">Protocol Buffer Encoding</a></li>
+					<li><a href="#BreakingChanges">Breaking Changes</a></li>
+				</ul>
+			</li>
+            <li><a href="#HeaderFileNamespaces">Header File Namespaces</a></li>
+            <li><a href="#Symbols">Symbols</a></li>
+            <li><a href="#MultipleConnections">Multiple Connections</a></li>
+            <li><a href="#BasicServerProcedures">Basic Server Procedures</a></li>            
+            <li><a href="#ConnectionLogon">Connection and Logon Sequence</a></li>
+            <li><a href="#EncodingRequest">Encoding Request Sequence</a></li>
+            <li><a href="#LoggingOff">Logging Off</a></li>
+            <li><a href="#MarketData">Market Data</a></li>
+            <li><a href="#MarketDataPriceFormat">Market Data Price Format</a></li>
+            <li><a href="#TradeOrderProcedures">Trade Order Procedures</a></li>
+            <li><a href="#BracketOrderProcedures">Bracket Order Procedures</a></li>
+            <li><a href="#IntegerTradingMessages">Integer Trading Messages</a></li>
+            <li><a href="#AutomaticTradingDataUpdates">Automatic Trading  Data Updates</a></li>
+            <li><a href="#UnsetMessageFields">Indication of Unset Message Fields</a></li>
+            <li><a href="#HistoricalPriceData">Historical Price Data</a></li>
+            <li><a href="#SymbolIDRequestIDRules">Symbol ID and Request ID Rules</a></li>            
+            <li><a href="#NonstandardMessages">Nonstandard Messages</a></li>
+        </ul> 
+    </li>
+    <li>DTC Messages
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_All.php" target="_blank" rel="noopener noreferrer">All DTC Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php" target="_blank" rel="noopener noreferrer">Authentication and Connection Monitoring Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php" target="_blank" rel="noopener noreferrer">Market Data Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php" target="_blank" rel="noopener noreferrer">Order Entry and Modification Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php" target="_blank" rel="noopener noreferrer">Trading Related Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AccountListMessages.php" target="_blank" rel="noopener noreferrer">Account List Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php" target="_blank" rel="noopener noreferrer">Symbol Discovery and Security Definitions Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_AccountBalanceDataMessages.php" target="_blank" rel="noopener noreferrer">Account Balance Data Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_LoggingMessages.php" target="_blank" rel="noopener noreferrer">Logging Messages (Opens a New Page)</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php" target="_blank" rel="noopener noreferrer">Historical Price Data Messages (Opens a New Page)</a></li>
+        </ul>
+    </li>
+    <li><a href="#FieldTypeDescriptions">DTC Message Field Type Descriptions</a>
+		<ul>
+			<li><a href="#int32">[int32] 32-bit Integer</a></li>
+			<li><a href="#unsigned_int8">[unsigned int8] Unsigned 8-bit Integer</a></li>
+			<li><a href="#unsigned_int16">[unsigned int16] Unsigned 16-bit Integer</a></li>
+			<li><a href="#unsigned_int32">[unsigned int32] Unsigned 32-bit Integer</a></li>
+			<li><a href="#EncodingEnum">[EncodingEnum] Encoding Enumeration</a></li>
+			<li><a href="#char">[char] Character</a></li>
+			<li><a href="#unsignedint8">[unsigned int8] Byte</a></li>
+			<li><a href="#double">[double] 64-bit Floating Point Value</a></li>
+			<li><a href="#float">[float] 32 bit Floating Point Value</a></li>
+			<li><a href="#AtBidOrAskEnum">[AtBidOrAskEnum] At Bid Or Ask Enumeration</a></li>
+			<li><a href="#LogonStatusEnum">[LogonStatusEnum] Logon Status Enumeration</a></li>
+			<li><a href="#t_DateTime">[t_DateTime] Date Time</a></li>
+			<li><a href="#t_DateTimeWithMilliseconds">[t_DateTimeWithMilliseconds] Date Time With Milliseconds</a></li>
+			<li><a href="#t_DateTimeWithMillisecondsInt">[t_DateTimeWithMillisecondsInt] Date Time With Milliseconds as Integer</a></li>
+			<li><a href="#t_DateTimeWithMicrosecondsInt">[t_DateTimeWithMicrosecondsInt] Date Time With Microseconds</a></li>
+			<li><a href="#t_DateTime4Byte">[t_DateTime4Byte] 4 Byte  UNIX Date-Time</a></li>
+			<li><a href="#MarketDataFeedStatusEnum">[MarketDataFeedStatusEnum] Market Data Feed Status Enumeration</a></li>
+			<li><a href="#BuySellEnum">[BuySellEnum] Buy Sell Enumeration</a></li>
+			<li><a href="#RequestActionEnum">[RequestActionEnum] Request Action Enumeration</a></li>
+			<li><a href="#MarketDepthUpdateTypeEnum">[MarketDepthUpdateTypeEnum] Market Depth Update Type Enumeration</a></li>
+			<li><a href="#PriceDisplayFormatEnum">[PriceDisplayFormatEnum] Price Display Format Enumeration</a></li>
+			<li><a href="#PutCallEnum">[PutCallEnum] Put Call Enumeration</a></li>
+			<li><a href="#SecurityTypeEnum">[SecurityTypeEnum] Security Type Enumeration</a></li>
+			<li><a href="#SearchTypeEnum">[SearchTypeEnum] Search Type Enumeration</a></li>
+			<li><a href="#OrderTypeEnum">[OrderTypeEnum] Order Type Enumeration</a></li>
+			<li><a href="#TimeInForceEnum">[TimeInForceEnum] Time In Force Enumeration</a></li>
+			<li><a href="#OrderStatusEnum">[OrderStatusEnum] Order Status Enumeration</a></li>
+			<li><a href="#HistoricalDataIntervalEnum">[HistoricalDataIntervalEnum] Historical Data Interval Enumeration</a></li>
+			<li><a href="#OrderUpdateReasonEnum">[OrderUpdateReasonEnum] Order Update Reason Enumeration</a></li>
+			<li><a href="#OpenCloseTradeEnum">[OpenCloseTradeEnum] Open Close Trade Enumeration</a></li>
+			<li><a href="#HistoricalPriceDataRejectReasonCodeEnum">[HistoricalPriceDataRejectReasonCodeEnum] Historical Price Data Reject Reason Code Enumeration</a></li>
+			<li><a href="#PartialFillHandlingEnum">[PartialFillHandlingEnum] Partial Fill Handling Enumeration</a></li>
+			<li><a href="#FinalUpdateInBatchEnum">[FinalUpdateInBatchEnum] Final Update In Batch Enumeration</a></li>
+		</ul>
+	</li>
+
+
+</ul>
+
+
+<hr>
+
+<div class="h2">
+    <h2 id="Introduction">Introduction</h2>
+    <div class="member-link">[<a href="#Introduction">Link</a>] - [<a href="#top">Top</a>]</div>
+
+    <p>This page documents the <b>Data and Trading Communications (DTC) Protocol</b> procedures for working with DTC messages, the DTC messages themselves, and the fields of those messages.</p>
+
+    <p>For an overview of the DTC Protocol, refer to the <a href="/index.php?page=doc/DTCProtocol.php">Data and Trading Communications Protocol</a> page.</p>
+
+    <p>For the DTC Protocol header files, refer to the <a href="/index.php?page=doc/DTCProtocol.php#DTCFiles" target="_blank" rel="noopener noreferrer">DTC Files</a> section. The files to use depend upon the particular <a href = "/index.php?page=doc/DTCProtocol.php#MessageFormatEncoding">encoding</a> to use. In the case of JSON encoding, there are no header files to use.</p>
+
+
+    <p>If you will be adopting DTC, either as a Client or Server, then you can take a copy of this documentation and  modify it to meet your requirements. <em>It has no copyright. </em></p>
+
+    <p><b>Client</b>: Any application program supporting DTC. This can be a manual trading, automated/algorithmic trading, charting, or market analysis program, a combination of these, or whatever.</p>
+
+    <p><b>Server</b>: Any service/program that provides Market Data and/or Trading functionality that follows this DTC protocol.</p>
+
+</div>
+
+<div class="h2">
+    <h2 id="DTCProtocolProcedures">DTC Protocol Procedures</h2>
+    <div class="member-link">[<a href="#DTCProtocolProcedures">Link</a>] - [<a href="#top">Top</a>]</div>
+
+    <p>This section documents the basic procedures of using DTC Protocol messages by the Client and Server.</p>
+
+    <p>The DTC protocol is nothing more than a messaging protocol with messages containing various fields of information.</p>
+
+    <p>It is the exchange of messages between a Client and Server over a network socket. Various  <a href="#MessageFormatEncoding" >Message Encodings</a> are supported.</p>
+
+    <div class="h3">
+        <h3 id="SupportOfDTCMessages">Client and Server Support of DTC Messages</h3>
+        <div class="member-link">[<a href="#SupportOfDTCMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The Client and the Server will only support the messages that they need to.  Not all of them are required to be supported with DTC.</p>
+
+        <p>If a Server does not support a particular message or class of messages, it will indicate this through various 1 byte integer fields in the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> message. A byte value of 1 signifies the field is TRUE.  A byte value of 0 signifies the field is FALSE.</p>
+
+        <p>For example, if the Server does not support Security Definitions or Trading, it will set these <b>LOGON_RESPONSE</b>  fields to zero: <b>s_LogonResponse::SecurityDefinitionsSupported</b> and <b>s_LogonResponse::TradingIsSupported</b>.  The default value for these flag fields is zero.</p>
+
+
+    </div>
+
+    <div class="h3">
+        <h3 id="MessageStructure">Message Structure</h3>
+        <div class="member-link">[<a href="#MessageStructure">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>In the case of simple binary encoding, a DTC message consists of a 2 byte Size and 2 byte message Type at the beginning of every message structure.  These 2 fields are automatically set by the message constructor in the standard header file</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="GetSetFunctions">Get and Set Functions</h3>
+        <div class="member-link">[<a href="#GetSetFunctions">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>In the case of the DTC encoding method which uses fixed length structures and strings, each message structure has <b>Get*</b> and  <b>Set*</b> functions for each  <em>text string</em> field of the structure. 
+
+        <p>Each fixed length structure has a <b>Get*</b> function for all other fields of the structure except for the <b>Type</b> field.</p>
+
+        <p>The DTC protocol structures do not use <b>Set*</b> functions for non-text strings fields.</p>
+
+        <p>There are some reasons for the <b>Get*</b> and  <b>Set*</b> functions.   In the case of text strings, one reason is to simplify use of text string  fields.  You can call a simple function to get and set a text string safely.  Another reason is to guard against access violations when accessing string and other fields which might not exist when the remote side is using an older protocol version (this will be a less likely case).</p>
+
+        <p>The Get and Set functions follow a standard naming method.  They are  named <b>Get[field name]</b> and <b>Set[field name]</b>.</p>
+
+        <p>If you add new messages to the DTC Protocol or add new fields to existing data structures, then it is a good idea to add Get and Set functions following the above requirements.</p>
+
+        <p>There are 2 special functions on each message structure which are described below:</p>
+        <ul>
+            <li><b>GetMessageSize()</b> : This returns the size of the message structure   in bytes. In the case where  this function  is called on a message structure received over the network, this gets the size of the message received over the network.  Otherwise, it is the size of the message structure according to the version of the header file that you have.</li>
+
+            <li> <b>CopyFrom(void * p_SourceData)</b>: This function is used to copy data into a message structure instance, from a memory block/buffer that contains the message received over the network. The beginning of the message from a memory block/buffer  needs to be pointed to by the <b>p_SourceData</b>. This function internally ensures that the smaller size of either the message structure instance being copied into or the message pointed to by p_SourceData, is used for the copy. The purpose of this does to guard against any access violations due to protocol differences between the Client and the Server.</li>
+        </ul>
+
+    </div>
+    
+    <div class="h3">
+    <h3 id="HandlingNetworkData">Handling Network Data</h3>
+    <div class="member-link">[<a href="#HandlingNetworkData">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>With a basic TCP/IP network socket connection it needs to be understood how on the receiving side data is received.  Whether you are making a function call to the Network Socket library to get data, or waiting for an event from the Network Socket library, either way there is going to be a buffer, provided by the operating system or a buffer that your application is providing, that receives the data.  There may be as little as one byte of data received, or more than one byte of data received.   You definitely are not going to have data arrive exactly according to the size of each message. The received data is simply going to be arriving in random lengths.</p>
+
+        <p>The header of each individual DTC message is four bytes. The first two bytes is the Size of the message. The header Size field is set to the length of the encoded message plus the size of the header. The Size field allows the receiver to know when an entire message has been received. </p>
+
+        <p>The basic technique for handling data from the network socket is to place the data received into a buffer. At the start of the connection the buffer is empty. Every time new data is received, you need to append to the end of this buffer.  Every time data arrives, look at the first two bytes of the buffer which is the Size field of the message header and then wait if necessary for the buffer to grow in size, until you have at least the number of bytes equal to this size. When you have a complete message. You can then remove from the buffer, this message and process  this message. Process the remaining bytes according to this technique.</p>
+        
+         <p>This is the basic concept of how to process data received over a network. The management of the buffer can be optimized for high throughput. For example, when removing data from the beginning of the buffer, to process a message,  you can just process the message within the buffer  and then shift the pointer, to the beginning of the next message.</p>
+    </div>
+    
+    
+    <div class="h3">
+        <h3 id="Versioning">Versioning</h3>
+        <div class="member-link">[<a href="#Versioning">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>In the DTC Protocol, the version of messages is an important consideration. How a Client and Server handle messages from the other side with differing DTC Protocol versions, depends upon the encoding method.</p>
+
+        <p>There are many special considerations in the case of Binary Encoding with Fixed Length Strings and Binary Encoding with Variable Length Strings.</p>
+
+        <p>In the case of JSON encoding,  being the data is encoded as text,  the only potential issue is that a field may be missing in the case  of when reading a message when the other side (Client or Server) is using a lower DTC protocol version.</p>
+        
+        <p> When there are new messages added to the DTC Protocol or new fields added to a structure,  then the protocol version number in the  <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_REQUEST">LOGON_REQUEST</a> and <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> messages will be incremented.</p>
+
+
+        <div class="h4">
+		<h3 id="BinaryEncodingWithFixedLengthStrings">Binary Encoding with Fixed Length Strings</h3>
+        <div class="member-link">[<a href="#BinaryEncodingWithFixedLengthStrings">Link</a>] - [<a href="#top">Top</a>]</div>
+
+            <p>In the case of binary encoding, existing defined structure fields will not change.  New fields can be added to an existing message at the end of the structure. </p>
+
+            <p>Get functions are provided for accessing the structure fields safely. These functions will do structure size checks to ensure there are no memory access violations. Set functions are supported for text strings.</p>
+
+            <p>What this means is as follows:</p>
+
+            <p>Whether you are the Client or the Server, if you see a newer protocol version from the other side, then there will be no issues. In this case you cannot do anything with unknown message types, however you will read them from the socket and discard them. Every message has a standard header with its size.  You will not have access to newer structure fields, but you will know the existing structure fields you have knowledge of, will be filled in.</p>
+
+            <p>Whether you are the Client or the Server, if you see an older protocol version from the other side, the newer message types that you have knowledge of, that the other side with the older version does not, are not supported, but it is not harmful to send them.  
+
+            <p>In the case of newer structure fields on existing message types, the Get functions will safeguard against any memory access violations. When getting a value from a newer unsupported field,  the Get function will return the default value.</p>
+
+            <p>The way that protocol safety is accomplished is through the use of Get functions.  These functions look at the Size of the message sent by the sender, look at the base address of the structure object, look at the  address of the field they are accessing and the size of the field.  If it is determined that the structure field does not exist, it is not accessed in the default value is returned instead.</p>
+
+            <p>Handling a Newer Protocol Version: Normally there is nothing special that needs to be done when communicating with the other side that has a newer protocol version. However, there is one special consideration when reading messages.  Make certain that when reading messages from the network socket, that you only read the number of bytes for a message according to the <b>Size</b> in its header. This should be obvious.</p>
+
+            <p>However, there is another important consideration where there could be a problem.  If you read a message, that has a larger size than the corresponding message structure in the header file version you have, then when you make a copy of that message into a destination structure, you must only copy the number of bytes according to the size of the structure in the header file that you have. The <b>CopyFrom</b> member function on all message structures supports this.</p>
+
+        </div>
+
+        <div class="h4">
+		<h3 id="BinaryEncodingWithVariableLengthStrings">Binary Encoding with Variable Length Strings</h3>
+        <div class="member-link">[<a href="#BinaryEncodingWithVariableLengthStrings">Link</a>] - [<a href="#top">Top</a>]</div>
+
+            <p>In the case of Binary Encoding with Variable Length Strings, the handling of new fields in a message and new messages is identical to Binary Encoding  with Fixed Length Strings (described above).</p>
+        </div>
+        
+        <div class="h4">
+		<h3 id="ProtocolBufferEncoding">Protocol Buffer Encoding</h3>
+        <div class="member-link">[<a href="#ProtocolBufferEncoding">Link</a>] - [<a href="#top">Top</a>]</div>
+
+            <p> In the case of Google Protocol Buffer encoding,  there is no issue, with additional fields added. However, changes to existing fields, potentially can be a problem. It depends upon what the specific  change is and how the protocol handles this.</p>
+        </div>
+        
+        <div class="h4">
+		<h3 id="BreakingChanges">Breaking Changes</h3>
+        <div class="member-link">[<a href="#BreakingChanges">Link</a>] - [<a href="#top">Top</a>]</div>
+
+            <p>The DTC Protocol does support breaking changes, where a new protocol version is not back compatible with older protocol versions.  This is not a common occurrence. And will be well documented when it occurs.</p>
+        </div>
+        
+       
+        
+    </div>
+
+    <div class="h3">
+        <h3 id="HeaderFileNamespaces">Header File Namespaces</h3>
+        <div class="member-link">[<a href="#HeaderFileNamespaces">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The header file for <a href="/DTC_Files/DTCProtocol.h" >DTC Binary Encoding with Fixed Length Strings</a>  has the data structures located in the <b>DTC</b> namespace.</p>
+
+        <p>The header file for  <a href="/DTC_Files/DTCProtocolVLS.h">DTC Binary Encoding with Variable Length Strings</a>, has the data structures located within the  <b>DTC_VLS</b> namespace. </p>
+
+        <p>There is no header file for JSON encoding. Therefore, there is no namespace for JSON encoding.</p>
+
+        <div class="h4">
+            <h4>Example:</h4>
+            <pre class="Code FullLineHeight">
+DTC_VLS::s_LogonRequest
+            </pre> 
+        </div>
+    </div>
+
+    <div class="h3">
+        <h3 id="Symbols">Symbols</h3>
+        <div class="member-link">[<a href="#Symbols">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The DTC Protocol supports any Symbol format with an optional Exchange specifier.</p>
+
+        <p>DTC requires the use of the actual Symbol for a particular market/security in all messages where a Symbol is required. The Symbol can be anything that the Server defines.</p>
+
+        <p>The symbol can define any kind of market/security including futures, stocks, spreads, strategies, options, indices, funds, bitcoins, or whatever. Multi-legged  securities like spreads, also can be defined through a unique text a string identifier.</p>
+        
+        <p>In the case of a futures contract, futures spread, or option symbol, it is necessary for the particular contract month and year and other parameters to be part of the symbol text string. </p>
+
+        <p>  The combination of the Symbol and optional Exchange are the complete identification for a particular market/security and will either express or imply the particular Security Type. While the Security Type is supported in security definition responses, it is not necessary to ever specify the Security Type when identifying a particular market/security. </p>
+
+        <p>There shall be no need for a Client to convert some type of numeric identifier to a Symbol or to an Exchange. The Client will work directly with Symbol and Exchange identifiers. If the Server requires a Symbol to internal identifier mapping, it is the responsibility of the Server to perform that on the Server side.</p>
+
+        <p>When subscribing to market data, the DTC Protocol uses an integer identifier in the market data request messages (SymbolID) which is sent to the Server along with the Symbol and Exchange identifiers.</p> 
+
+        <p>The Server uses that same integer identifier in all of the market data response messages to uniquely associate the response with a particular Symbol and Exchange.  This is done to reduce the space in the market data response messages which improves performance over a network.</p>
+
+    </div>  
+
+    <div class="h3">
+        <h3 id="MultipleConnections">Multiple Connections</h3>
+        <div class="member-link">[<a href="#MultipleConnections">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The DTC Protocol can use multiple connections. For example, one connection could be used  for streaming market data, another connection for trading, and another connection for historical price data.</p>
+
+        <p>Each of these connections will use the identical protocol and only use the message types relevant to the particular purpose of the connection.</p>
+
+        <p>Each of these connections can use a different encoding.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="BasicServerProcedures">Basic Server Procedures</h3>
+        <div class="member-link">[<a href="#BasicServerProcedures">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This section explains the basic top-level procedures for a DTC Protocol Server.</p>
+
+        <ol>
+            <li>Assuming the DTC Server is connected to a TCP/IP network, which is usually the public Internet, the Server will listen for network connections on a particular Internet port number. </li>
+
+            <li>When an incoming connection is received,  the network connection will be established by the underlying TCP protocol.</li>
+
+            <li>The Server will then wait for an <a href="#EncodingRequest" >ENCODING_REQUEST</a> message. The server must implement support for this message. The server should expect this message to be received using <a href="#BinaryEncoding" >Binary Encoding</a>, unless the the Client and Server have each decided  upon another encoding to use in which case,  the client will skip the step of sending an  <b>ENCODING_REQUEST</b>.</li>
+
+            <li>Once the encoding has been established between the Client and Server, the next step is that the <a href="#ConnectionLogon">Connection and Logon Sequence</a> needs to be followed.</li>
+            
+            <li>After a successful Logon by the Client, the Client will send request messages to the Server and the Server   will send the response messages.</li>
+            
+            <li>The Server can either reject or ignore request messages until there has been a successful Logon by the Client. </li>
+        </ol>
+    </div>
+
+    <div class="h3">
+        <h3 id="ConnectionLogon">Connection and Logon Sequence</h3>
+        <div class="member-link">[<a href="#ConnectionLogon">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The Client will connect to the Server at the specified IP address and port number.</p>
+
+        <p>Dynamically reconnecting to another specified Server is supported and is explained in the steps below.</p>
+
+        <p>The Client can optionally support launching an executable Server program upon connection. Therefore,  Data or Trading service providers can create an executable program that acts as a TCP/IP socket Server if they want their Server to run on the user's computer. The Client will pass the port number on the command line  when running this program (Port number parameter format: <b>/Port:[port number]</b>). This is the socket port the local Server executable will need to listen on.  The Client will verify that the port passed to the Server executable program can be listened on before it starts the Server executable and passes that port number. The Client will always pass an available port number.</p>
+
+        <p>The logon sequence from the Client to the Server is as follows:</p>
+
+        <ol>
+            <li>A DTC Client establishes a TCP/IP connection to the Server. This can be either TLS or non-TLS. It is highly recommended the Server enables <a href="https://en.wikipedia.org/wiki/Nagle%27s_algorithm" target="_blank" rel="noopener noreferrer">TCP No Delay</a> when the Server accepts the connection. </li>
+
+            <li> It is important to understand that the DTC protocol uses different encodings for messages. For more information refer to <a href = "/index.php?page=doc/DTCProtocol.php#MessageFormatEncoding">Message Format and Encoding</a>.  Messages must be exchanged between the Client and Server using the desired encoding.
+            <br> <br>
+            If the Client does not know the default encoding used by the Server or the encoding needs to be changed, the Client  must send an <a href="#EncodingRequest">Encoding Request Sequence</a> to request the DTC encoding to use before sending any other messages. If the Client knows the default encoding used by the Server, then it does not need to send an  ENCODING_REQUEST message to the Server but it is preferred.</li>
+
+            <li>The Client fills out a <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_REQUEST">LOGON_REQUEST</a>  message structure and sends it to the Server over the network socket. Only the message fields which are relevant for the particular Server being connected to, need to be set. 
+            <br>
+            <br>The <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_REQUEST">LOGON_REQUEST::HeartbeatIntervalInSeconds</a> must be set by the Client.</li>
+
+            <li>The Client will wait for a <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> message structure from the Server. 
+                <br> <br>
+                The Server will always respond with an  <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> message.  It must set the <b>s_LogonResponse::Result</b> field. The following are the supported constants for the Result field: <b>LOGON_SUCCESS</b>, <b>LOGON_ERROR</b>, <b>LOGON_ERROR_NO_RECONNECT</b>, <b>LOGON_RECONNECT_NEW_ADDRESS</b>.
+                <br> <br>
+                It is recommended the Server set the <b>s_LogonResponse::ResultText</b> string field to free-form text indicating more descriptive text for the logon result whether the connection was successful or unsuccessful.</li>
+
+            <li>If the <b>Result</b> field is set to <b>LOGON_SUCCESS</b>, then this indicates to the Client a successful logon. At this time, the Client can interpret the other fields in the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> message and send other messages to the Server.</li>
+
+            <li>If the  <b>Result</b> field is set to either of <b>LOGON_ERROR</b> or <b>LOGON_ERROR_NO_RECONNECT</b>, then this is an unsuccessful logon and the Server will close the network connection. If the  <b>Result</b>  is <b>LOGON_ERROR_NO_RECONNECT</b>, then the  Client should not try to reconnect to the Server again.</li>
+
+            <li>In the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> message if the <b>s_LogonResponse::Result</b> member is set to <b>LOGON_RECONNECT_NEW_ADDRESS</b>, then this signals to the Client reconnect to the address given in  <b>s_LogonResponse::ReconnectAddress</b>.</li>
+
+            <li>The <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_REQUEST">LOGON_REQUEST</a> indicates a Heartbeat interval that each side needs to follow.  Each side will send a <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-HEARTBEAT">HEARTBEAT</a> message structure at the given interval in seconds. </li>
+
+            <li> At this point, the Client can make requests to the Server by sending any of the other supported <a href="/index.php?page=doc/DTCMessages_All.php">DTC Messages</a>. If a particular class of messages is not supported by the Server, the Client will become aware of this by  examining the related variables in the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> message.</li>
+        </ol>
+
+    </div>
+
+    <div class="h3">
+        <h3 id="EncodingRequest">Encoding Request Sequence</h3>
+        <div class="member-link">[<a href="#EncodingRequest">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p> The <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a> and <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> messages were added in version 6 of the DTC Protocol. These control the particular message encoding to be used during the connection.</p>
+
+        <p>Servers/Clients can support one or more encodings and the Encoding Request Sequence is used to discover the encoding to be used during the connection. The Server can accept or reject the requested message encoding from the Client.</p>
+
+        <p>The following sequence is used to request a particular message encoding between the Server and the Client.</p>
+        <ol>
+            <li>It is supported in the DTC Protocol for the  Server and the Client to agree on a particular encoding that they will use between each other and bypass the <em>Encoding Request Sequence</em> completely. If this is the case, the remaining steps should be skipped by the Client and the Server.  However, this is not considered the DTC standard for Clients and Servers and is an exception to allow for more simple use of the DTC Protocol when Clients and Servers know they are only going to work with a particular message encoding.</li>
+ 
+            <li>In version 6 or higher of the DTC Protocol, all Servers <em>must respond</em> to the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a> message, even if it is only to reject a requested change and set the encoding to the current Server supported encoding value. </li>
+
+            <li>During the initial exchange of the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a> and <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> messages at the beginning of the network connection, these must be both sent using  <a href="#BinaryEncoding" >Binary Encoding</a>.
+            <br> <br>
+             However, there is an exception to this.  If the Server has been  <em>preset</em> to a particular encoding at the start of a connection and this has been disclosed to the Client by some other non-technical means, then the Client must  send the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a>  to the Server using the encoding the Server is currently set to and not necessarily Binary Encoding.
+            </li>
+
+            <li> For a Client using JSON Encoding to be able to connect to a Server, the Client needs to form and process the initial Encoding Request and Encoding Response messages using the standard Binary Encoding <a href="/DTC_Files/DTCProtocol.h" >s_EncodingRequest message structure</a>.</li>
+
+            <li>The Client sends an <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a> message to the Server with the requested encoding.  This message must be sent using  <a href="#BinaryEncoding" >Binary Encoding</a> if it is the first message sent in the data stream during the connection. The Server must be able to respond  to this message using Binary Encoding as well.</li>
+
+            <li>The Client waits for the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> from the Server. If the Client has not received a response within a reasonable time,  like 20 seconds, the Client should close the network connection because it cannot reliably communicate with the Server until it  knows the message encoding. </li>
+
+            <li>The Server receives the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a> message, and responds with an <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> message. 
+            <br> <br>
+
+            If the Server accepts the requested enocding, the <b>Encoding</b> field in the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> must be set to the value from the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a> message. 
+            <br> <br>
+            If the Server rejects the requested encoding, the <b>Encoding</b> field in the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> message must be set to the current encoding value used by the Server. 
+            <br> <br>
+            Servers that only support one encoding must still respond to an <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_REQUEST">ENCODING_REQUEST</a> by sending an <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> message with the <b>Encoding</b> field set to the particular DTC encoding that the Server supports.
+            <br> <br>
+            In either case, the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> is sent using the  <em>encoding</em> the Server is currently using,   <em>before the requested change</em>, which usually will be Binary Encoding if it is the first message at the beginning of the network connection. All subsequent messages are sent using the new encoding if it was accepted by the Server.</li>
+
+            <li>The Client receives the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> message and processes it using the original encoding which is Binary Encoding. The Client then changes encoding specified by the <b>Encoding</b> field in the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> message. All subsequent messages must be sent and received using the potential new encoding.</li>
+
+            <li>While the encoding request sequence is typically performed before sending the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_REQUEST">LOGON_REQUEST</a> message, the sequence can technically be performed at anytime. The only restriction is that the Client should stop sending new messages and continue processing received messages with the current encoding until the encoding is changed with an <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a>. This also includes processing the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-ENCODING_RESPONSE">ENCODING_RESPONSE</a> message with the current encoding.  After that message the Client will use the new potential encoding.</li>
+        </ol>
+
+      
+  
+    </div>
+
+
+    <div class="h3">
+        <h3 id="LoggingOff">Logging Off</h3>
+        <div class="member-link">[<a href="#LoggingOff">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>A logoff can be performed by either side by sending a <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGOFF">LOGOFF</a> message to the other side and gracefully closing the socket with a linger.  </p>
+
+        <p>The Server and the Client will always write complete messages into the socket. When either side wants to logoff and disconnect it will send a <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGOFF">LOGOFF</a> message to the other side and gracefully close the socket.</p>
+
+        <p> The only exception to this  is when the Server sends a <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a>message to the Client  with the <b>Result</b> field set to a value other than  <b>LOGON_SUCCESS</b>, then it can gracefully close the network connection after without sending a <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGOFF">LOGOFF</a> message to the Client.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="MarketData">Market Data</h3>
+        <div class="member-link">[<a href="#MarketData">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>A Client will subscribe and unsubscribe to market data for a symbol by using the <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_REQUEST">MARKET_DATA_REQUEST</a> message. When subscribing to  market data for a symbol, the request is identified by  a unique  <a href = "#SymbolIDRequestIDRules">SymbolID</a> field.  </p>
+        
+        <p>All messages from the Server relating to that market data request, will use this same  <b>SymbolID</b>  to associate the particular data message with the symbol. None of the market data messages from the Server use a symbol or exchange string.</p>
+
+        <p>After a Client subscribes to market data, the Server will respond with any of the <b>Server &gt;&gt; Client</b>  <a href = "/index.php?page=doc/DTCMessages_MarketDataMessages.php">Market Data Messages</a> currently defined in the DTC Protocol.</p>
+        
+        <p>The Server will implement and send what messages are appropriate for its implementation of the DTC Protocol for market data. The Client will implement support for all market data messages from the Server.  Although the Client does not need to implement any of the Integer market data messages.</p>
+
+        <p>This section explains the procedures for the functioning of market data between the Server and Client for a particular symbol.</p>
+
+        <ol>
+            <li>A Client will  subscribe to market data by using the <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_REQUEST">MARKET_DATA_REQUEST</a> message. </li>
+
+            <li>If the Client has subscribed to an invalid symbol or there is some problem the Server finds with the <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_REQUEST">MARKET_DATA_REQUEST</a> message the Server will respond with a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_REJECT">MARKET_DATA_REJECT</a> message. At this point, there is nothing further the Server needs to respond with. </li>
+
+            <li>If the Client has subscribed to a valid symbol, the Server will respond immediately with a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_SNAPSHOT">MARKET_DATA_SNAPSHOT</a> message, providing as many of the message fields as possible.</li>
+
+            <li>When there is a change with the Bid or Ask prices or quantities for the symbol subscribed to, the Server will send a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_BID_ASK">MARKET_DATA_UPDATE_BID_ASK</a> message to the Client. If the Symbol only provides Bid and Ask updates, then  this message will  be used.  <b>MARKET_DATA_UPDATE_TRADE</b> messages will not be sent in this case. </li>
+
+            <li>When a new trade occurs for the symbol subscribed to,  the Server will send a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_TRADE">MARKET_DATA_UPDATE_TRADE</a> message to the Client.</li>
+
+            <li>When the session trade volume for the symbol changes, the Server can send a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_VOLUME">MARKET_DATA_UPDATE_SESSION_VOLUME</a> message. However, for the complete details of when the session trade volume message should be sent the Client, refer to the documentation for <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_VOLUME">MARKET_DATA_UPDATE_SESSION_VOLUME</a>. </li>
+
+            <li>When a new session High or Low occurs for the symbol,  the Server will send a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_HIGH">MARKET_DATA_UPDATE_SESSION_HIGH</a> or <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_LOW">MARKET_DATA_UPDATE_SESSION_LOW</a> message. </li>
+
+            <li> When there is a change of the session Settlement price, session Open price or the Open Interest value for the symbol, the Server will send a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_SETTLEMENT">MARKET_DATA_UPDATE_SESSION_SETTLEMENT</a>, <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_SESSION_OPEN">MARKET_DATA_UPDATE_SESSION_OPEN</a>, or <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_OPEN_INTEREST">MARKET_DATA_UPDATE_OPEN_INTEREST</a> message respectively. </li>
+
+            <li>If any of the other fields in a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_SNAPSHOT">MARKET_DATA_SNAPSHOT</a> message change and there is no corresponding <b>MARKET_DATA_UPDATE_*</b> message available for that field, then the Server will send a new <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_SNAPSHOT">MARKET_DATA_SNAPSHOT</a> message. This message is intended to be sent infrequently.</li>
+
+            <li>If the Client requires market depth data beyond the best Bid and  Ask level, then it will request it with a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_REQUEST">MARKET_DEPTH_REQUEST</a> message. The Client shall only request market depth data if  <b>s_LogonResponse::MarketDepthIsSupported</b> is set to 1.
+            <br>
+            <br>
+            If the market depth request is rejected for any reason, the Server will send a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_REJECT">MARKET_DEPTH_REJECT</a> message to the Client.</li>
+
+            <li> If the market depth request is accepted by the Server, then it will respond immediately with a series of <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_SNAPSHOT_LEVEL">MARKET_DEPTH_SNAPSHOT_LEVEL</a> messages which the Client uses to build its initial market depth book.</li>
+
+            <li>In order to conserve bandwidth, the Server can optionally set <b>s_LogonResponse::MarketDepthUpdatesBestBidAndAsk</b> to 1  and when beginning to send market depth data in response to a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_REQUEST">MARKET_DEPTH_REQUEST</a>, it should then stop best Bid and Ask updates through a <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DATA_UPDATE_BID_ASK">MARKET_DATA_UPDATE_BID_ASK</a> message. 
+                <br> <br>
+                The Server is not under an obligation to do this in the DTC protocol. In the case where the Server is sending market depth messages only, the Client will then use the updates at market depth level 1 to update the best  Bid and Ask prices and it will know to do that because <b>s_LogonResponse::MarketDepthUpdatesBestBidAndAsk</b> has been set to 1. </li>
+
+            <li> As the market depth data changes, the Server will send to the Client <a href="/index.php?page=doc/DTCMessages_MarketDataMessages.php#Messages-MARKET_DEPTH_UPDATE_LEVEL">MARKET_DEPTH_UPDATE_LEVEL</a> messages to update the market depth book. Each message updates one level of depth on one side.</li>
+
+            <li>If a Client makes a request for Security Definition data with the <a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SECURITY_DEFINITION_FOR_SYMBOL_REQUEST">SECURITY_DEFINITION_FOR_SYMBOL_REQUEST</a> message, the Server will respond to this request with a  <a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SECURITY_DEFINITION_RESPONSE">SECURITY_DEFINITION_RESPONSE</a> and provide as many of the message fields as possible.</li> 
+            
+            <li>It is recommended the Client always makes a Security Definition For Symbol request to the Server at the time of making a market data request, to obtain the available Security Definition data.</li>
+
+        </ol>
+    </div> 
+
+    <div class="h3">
+        <h3 id="MarketDataPriceFormat">Market Data Price Format</h3>
+        <div class="member-link">[<a href="#MarketDataPriceFormat">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>In the <b>MARKET_DATA_*</b> and <b>MARKET_DEPTH_*</b> messages, price values can be stored in two formats. These are double precision floating point and single precision floating point formats.</p>
+
+        <p>The standard  format is double precision floating point which is consistent with the FIX protocol.</p>
+        
+        <p> As of August 2020, integer market data messages which use integers to hold price values, are discontinued. </p>
+
+
+        <p>If a market data/depth message ends with <b>_COMPACT</b>, the price values are stored in single precision floating-point format.</p>
+        
+        <p>In the case when the server sends market data messages using a double or float value  for the price related fields, it may require that a multiplier be applied.  The multiplier is the  <b>DisplayPriceMultiplier</b> field in the <a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SECURITY_DEFINITION_RESPONSE">SECURITY_DEFINITION_RESPONSE</a> message  which is requested by the Client with the <a href="/index.php?page=doc/DTCMessages_SymbolDiscoverySecurityDefinitionsMessages.php#Messages-SECURITY_DEFINITION_FOR_SYMBOL_REQUEST">SECURITY_DEFINITION_FOR_SYMBOL_REQUEST</a>  message.</p>
+
+        <p>A Client  should implement support for all market/depth data messages sent from the Server, to be compatible with any Server no matter what messages the Server chooses to use. </p>
+
+    </div>
+
+    <div class="h3">
+        <h3 id="TradeOrderProcedures">Trade Order Procedures</h3>
+        <div class="member-link">[<a href="#TradeOrderProcedures">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The DTC Protocol provides full high-performance support for financial market trading.</p>
+
+        <p>There are messages for <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php">submitting orders</a>, providing Open Orders and Order Updates, reporting Trade Positions, and reporting Historical Order Fills.</p>
+
+        <p>With the DTC Protocol, the general model is that the Server maintains a list of Open Orders, the current  Trade Positions, and can optionally maintain Historical Order Fills.   </p>
+        
+        <p>When the Client connects to the Server, it will make a request for the list of  <a href="/index.php?page=doc/DTCMessages_AccountListMessages.php#Messages-TRADE_ACCOUNTS_REQUEST" >Trading Accounts</a>, <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-OPEN_ORDERS_REQUEST" >Open Orders</a>,  <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-CURRENT_POSITIONS_REQUEST" >Trade Positions</a>, and <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-HISTORICAL_ORDER_FILLS_REQUEST" >Historical Order Fills</a>.  The Client will then be up-to-date in regards to trading once it receives this information.</p>
+
+        <p>In DTC there is a single message, <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a>, which is similar to the FIX Execution Report which is used to communicate from the Server to the Client, the details of an order, the status of an order, the most recent action on the order, and Client order actions which results in a rejection.</p> 
+
+        <p>The reason there is a single unified message is to ensure easier integration on the Client-side, to ensure that the status of an order, and the reason for the sending of the <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a>  is always clear without any confusion. This has proven to be a very good model to follow.  It is the model used by FIX.   The primary difference between the DTC <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> message and the FIX Execution Report, is order Cancel and order Cancel/Replace  rejects also use  the same <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> message to communicate those rejections. The <b>OrderUpdateReason</b> field in the <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a>  message indicates if the  order update is a rejection  and the specific reason for the rejection.  There is no room for confusion.</p>
+
+        <p>The main identifying fields of the <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> message are the <b>ClientOrderID</b>, <b>ServerOrderID</b>, <b>OrderUpdateReason</b>, and the <b>OrderStatus</b>.</p> 
+
+        <p>The other fields of the  <b>ORDER_UPDATE</b> message need to be  set by a Server when sending the <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> message, unless they are identified as optional by the DTC Protocol and are not relevant for the particular order. </p>
+        
+        <p>The only exception to this is when the <b>OrderUpdateReason</b> is a <b>*REJECT</b>.  In this case,  the only fields that need to be set in the <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> message are <b>TotalNumMessages, MessageNumber, Symbol, ClientOrderID, OrderStatus, OrderUpdateReason</b>.</p>
+        
+        <p>When an order fills, an <b>ORDER_UPDATE</b> message needs to be sent from the Server to the Client, and a <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-POSITION_UPDATE" >POSITION_UPDATE</a> needs to be sent to the Client updating the Trade Position data for the Symbol and Trade Account.  </p>
+    </div>
+
+    <div class="h3">
+        <h3 id="BracketOrderProcedures">Bracket Order Procedures</h3>
+        <div class="member-link">[<a href="#BracketOrderProcedures">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>A bracket order consists of a parent order and 2 child orders in an OCO Group. One of the child orders will be a target order. Usually this is a Limit order.   The other child order will be a Stop order.  The below steps explain how the Client should submit a bracket order in the DTC protocol and how the Server should handle this order.</p>
+
+        <p>Once submitted, all three of the orders are independent orders which can be modified and canceled. However, they have an association with each other.</p>
+
+        <ol>
+            <li>The client will submit the Parent order using the <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_SINGLE_ORDER">SUBMIT_NEW_SINGLE_ORDER</a> message. In the parent order message it is necessary for the Client to set the   <b>s_SubmitNewSingleOrder::IsParentOrder</b> field to 1. This signifies to the Server that this is a Parent order of a bracket order.  
+                <br><br>
+                The Server will use <b>IsParentOrder</b> as a flag to know that this message is a parent order. The Server must hold onto this order until it  receives the subsequent <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_OCO_ORDER">SUBMIT_NEW_OCO_ORDER</a> message  and then process all of the orders as one complete set. If the next  message the Server receives is not a <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_OCO_ORDER">SUBMIT_NEW_OCO_ORDER</a>  message, then it should reject the <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_SINGLE_ORDER">SUBMIT_NEW_SINGLE_ORDER</a>  message with an <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> message.</li>
+
+            <li>The client will submit the 2 child orders  using the <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_OCO_ORDER">SUBMIT_NEW_OCO_ORDER</a> message.</li>
+
+            <li>In the SUBMIT_NEW_OCO_ORDER message, the Client  needs to set the <b>s_SubmitNewOCOOrder::ParentTriggerClientOrderID</b> field. This field needs to be set to the <b>ClientOrderID</b> used in the previous <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_SINGLE_ORDER">SUBMIT_NEW_SINGLE_ORDER</a> message which is the parent order for a bracket order.  This signifies that the two orders in the OCO order are child orders of the specified parent.
+                <br><br>
+                When submitting the parent order, it is necessary  for the Client to set <b>IsParentOrder</b> on that order. Otherwise, the Server  must ignore <b>ParentTriggerClientOrderID</b>  in this message if it is referencing an order that did not set <b>IsParentOrder</b>.</li>
+
+            <li>The  combination of the single parent order and the OCO order  make up a complete bracket order which the Server needs to process. </li>
+
+            <li>The Server needs to acknowledge the three orders which have been sent by sending a separate <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> for each of the three orders.  The  <b>OrderUpdateReason</b> needs to be either <b>NEW_ORDER_ACCEPTED</b> or <b>NEW_ORDER_REJECTED</b>. If any of the orders are rejected, they all should be rejected by the Server. Further updates to the status of the orders needs to be communicated by the Server to the Client by sending a <a href="/index.php?page=doc/DTCMessages_TradingRelatedMessages.php#Messages-ORDER_UPDATE">ORDER_UPDATE</a> message to the Client individually for each order.</li>
+
+            <li>The OCO order pair does not become active until the parent is filled or partially filled.   Each of the orders in the OCO pair orders  need to have an Order Status of <b>ORDER_STATUS_PENDING_CHILD</b> set by the Server. When the parent is partially filled, then the quantities of the OCO orders, only increase to the filled quantity of the parent.</li>
+
+            <li> Each of the three orders can be independently canceled and modified by using the <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-CANCEL_REPLACE_ORDER">CANCEL_REPLACE_ORDER</a> or <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-CANCEL_ORDER">CANCEL_ORDER</a>  messages. When the parent order is canceled, the children need to be canceled as well by Server. </li>
+
+            <li> It is recommended, although not required by DTC, that when the parent order is modified by the Client before it is filled, that the child orders are also modified by the Server to maintain the same  price offsets that they had to the parent order before the parent order was modified.</li>
+
+        </ol>
+    </div>
+    
+    <div class="h3">
+        <h3  id="IntegerTradingMessages">Integer Trading Messages</h3>
+        <div class="member-link">[<a href="#IntegerTradingMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+    
+        <p>The following integer order messages are no longer supported as of August 2020:</p>
+    
+        <ul>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_SINGLE_ORDER_INT" >SUBMIT_NEW_SINGLE_ORDER_INT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-SUBMIT_NEW_OCO_ORDER_INT" >SUBMIT_NEW_OCO_ORDER_INT</a></li>
+            <li><a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php#Messages-CANCEL_REPLACE_ORDER_INT" >CANCEL_REPLACE_ORDER_INT</a></li>
+        </ul>
+        
+
+	</div>	
+
+    <div class="h3">
+        <h3 id="AutomaticTradingDataUpdates">Automatic Trading Data Updates</h3>
+        <div class="member-link">[<a href="#AutomaticTradingDataUpdates">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>Each side assumes that all changes to Open Orders, Trade Positions, and Account Balances are automatically sent from the Server to the Client with the corresponding messages.</p>
+
+        <p>So it is implied that these are subscribed to for all accounts associated with the logged in Username.</p>
+
+        <p>If the Username supports a very large number of accounts and this is impractical, then this is an area where DTC can be further expanded upon by a service provider.</p>
+
+    </div>
+
+    <div class="h3">
+        <h3 id="UnsetMessageFields">Indication of Unset Message Fields</h3>
+        <div class="member-link">[<a href="#UnsetMessageFields">Link</a>] - [<a href="#top">Top</a>]</div>
+        
+        <p>In the DTC Protocol, the default value for numeric, date-time,  or enumeration fields is zero unless otherwise specified in the field description.</p>
+        
+        <p> The default for text strings is an empty string unless specified otherwise.</p>
+
+        <p>In the case of DTC Binary encoding for messages, where message fields are optional, which are not set by either a Client or Server before sending a message, where that field is a numeric type, and where the default value of zero can be interpreted as a valid value, then DTC requires the field be set to its maximum value.  The field description will specify this if it applies to that particular field. Otherwise, it does not.</p>
+
+        <p>In the case of a double, this will be <b>DBL_MAX</b>.</p> 
+        
+        <p>In the case of an integer, this will be <b>INT_MAX</b>. </p>
+        
+        <p>In the case of an unsigned integer, this will be <b>UINT_MAX</b>.</p> 
+        
+        <p>In the case of a 64 bit integer this will be <b>INT64_MAX</b>.</p>
+
+        <p>This way either the Client or Server can compare the field with these values to determine if the field is actually unset and should be ignored.</p>
+
+        <p>In the case of JSON encoding and Google Protocol Buffers encoding, an unset value can be indicated by the field not being present in the JSON object or Google Protocol Buffers object. Therefore, with these protocols, an unset field needs to be indicated by the field not being present in the message object.</p>
+
+        <p> With the <a href="/index.php?page=doc/DTCMessages_OrderEntryModificationMessages.php" >Order Entry and Modification Messages</a>, Price and Quantity fields are required to be set so they will never use unset values. </p>
+        
+        <p>However, in the case of the Order Cancel and Replace messages, the Price fields can be optionally set but there are separate fields indicating whether they are set. So the Price fields will <em>never use unset</em> values if they are not set. </p>
+        
+
+    </div>
+
+    <div class="h3">
+        <h3 id="HistoricalPriceData">Historical Price Data</h3>
+
+        <div class="member-link">[<a href="#HistoricalPriceData">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>Historical price data is fully supported with DTC.  It is a highly efficient and straightforward protocol.</p>
+
+        <p>It optionally supports ZLib compression.</p> 
+
+        <p>The general sequence for historical price data requests and responses is as follows:</p>
+
+        <ol>
+            <li>Historical data should use a completely separate network connection. The Client and the Server will follow the <a href="#ConnectionLogon">Connection and Logon Sequence</a> for this connection.
+                <br>
+                <br>
+                There is not a strict requirement to use a separate network connection for historical data and implementers of the DTC  Protocol can deviate from this. If a separate connection is not used, then when sending the historical price data records in response to a request and they are ZLib  compressed, there can be no other message types interleaved with a response until the historical data is fully served for the request. This includes Heartbeat messages.</li>
+
+            <li> If a separate network cconnection is used, it is recommended that heartbeat messages not be used. When compression is used, this will corrupt the transmission of the compressed data.  With compression they definitively cannot be used. Therefore, it is best practice to avoid the use of heartbeat messages and close the network socket connection on the Server side, after 30 seconds or so of inactivity.
+            <br> <br> 
+            The Client should not depend upon receiving  heartbeat messages and instead should rely upon the receiving of historical data records to indicate the connection is active.
+            </li>
+
+            <li>The Server can optionally set the <b>OneHistoricalPriceDataRequestPerConnection</b> field to 1 in the  <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a>  message to indicate that it only will accept one historical price data request per network connection. After the first request is served or rejected, the network connection will be gracefully closed at the appropriate time by the Server. The Server should close the socket when the Client has read all of the data. This method simplifies the serving of historical price data on the Server side and the implementation on the Client side when data compression is used. </li>
+
+            <li>The Client will send to the Server a <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_REQUEST">HISTORICAL_PRICE_DATA_REQUEST</a> message with the details of the historical data to be returned by the Server. </li>
+
+            <li>If the Server rejects the historical data request, it will send a <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_REJECT">HISTORICAL_PRICE_DATA_REJECT</a> message.  This is never ZLib compressed. At this point, the communication is complete for the particular historical data request.</li>
+
+            <li>If the Server accepts the historical data request, it will send a <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_RESPONSE_HEADER">HISTORICAL_PRICE_DATA_RESPONSE_HEADER</a> message.  This is never ZLib compressed.</li>
+
+            <li>In the case of a request other than for Tick data, the Server will respond with a series of <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_RECORD_RESPONSE">HISTORICAL_PRICE_DATA_RECORD_RESPONSE</a> messages until the historical data request is completely fulfilled. 
+            <br> <br>
+            These can be compressed with ZLib compression if the Client requested it and the Server supports this compression.
+                <br>
+                <br>
+                <em>DTC strictly defines the  ordering of records returned, from oldest to newest</em>. When the Server writes these records into the network socket, it should write them in batches for efficiency. The batch size will be determined by the Server.</li>
+
+            <li>In the case of a request for Tick data, the Server will respond with a series of <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE">HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE</a> messages until the historical data request is completely fulfilled. If the Server does not support Tick data or does not have Tick data for the specified  time period it can respond with <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_RECORD_RESPONSE">HISTORICAL_PRICE_DATA_RECORD_RESPONSE</a>  messages. 
+            <br> <br>
+            In either case these messages can be compressed with ZLib if the Client requested it and the Server supports this compression. 
+            <br> <br>
+            <em>DTC strictly defines the ordering of records returned, from oldest to newest</em>. When the Server writes these records into the network socket, it should write them in batches for efficiency. The batch size will be determined by the Server.</li>
+
+            <li>The final historical data record message (<a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_RECORD_RESPONSE">HISTORICAL_PRICE_DATA_RECORD_RESPONSE</a>, <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE">HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE</a>), needs to set the <b>IsFinalRecord</b> structure  field to 1 to  flag that it is the final record.
+            <br> <br>
+            This record does not need to contain any price data. If the record is an empty record other than having the flag set, then the <b>t_DateTime</b> structure field needs to be set at the default of 0 to indicate to the Client that the record contains no valid price data.</li>
+
+            <li>The Server must hold the connection open so long as the Server has data to send in the  network socket buffer. Furthermore, the socket should not be closed until either there is several minutes of inactivity or the Client-side has closed the network socket. </li>
+            
+            <li>  When the final historical data record has been received,  the historical data request has been rejected, or a    <b>HISTORICAL_PRICE_DATA_RESPONSE_TRAILER</b> message is received, then the Client can close the  connection if no further historical data requests are to be made, or the server only supports one historical data request per connection (<a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a>::OneHistoricalPriceDataRequestPerConnection  = 1). </li>
+
+            <li>If for whatever reason, the connection is lost, the Client will make a fresh connection for historical price data when needed. So there is no need for the connection to be persistent.  </li>
+
+            <li>Since historical price data is not the type of data the Client will be making frequent requests for, the Server can close the socket connection after a certain period of inactivity determined by the Server (example: 30 seconds). If the Server has set the field  <b>OneHistoricalPriceDataRequestPerConnection</b> to 1 in the <a href="/index.php?page=doc/DTCMessages_AuthenticationConnectionMonitoringMessages.php#Messages-LOGON_RESPONSE">LOGON_RESPONSE</a> message, it will only respond to one request from the Client and gracefully closed a network socket when done. The Client should not reestablish this connection until it needs historical  price data again.  </li>
+
+            <li>For further details, refer to the relevant header file which includes all of the associated data structures and member fields of those structures.</li>
+
+        </ol>
+    </div>
+
+    <div class="h3">
+        <h3 id="SymbolIDRequestIDRules">Symbol ID and Request ID Rules</h3>
+        <div class="member-link">[<a href="#SymbolIDRequestIDRules">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p><b>RequestID</b> message field values need to be unique per request, message type and per connection session. A connection session is defined  as the time from a successful logon up until the disconnection.</p>
+
+        <p><b>RequestID</b> values can conflict between message types and connection sessions. RequestID message field values can also conflict with SymbolID  field values.</p>
+
+        <p><b>SymbolID</b> message field values  for market data request messages need to be unique per Symbol and Exchange combination only. The SymbolID value cannot change when market data is subscribed to. When requesting snapshot data or after unsubscribing and re-subscribing, the SymbolID value can change for a Symbol and Exchange combination.</p>
+
+        <p>SymbolIDs can conflict with RequestIDs used in other message types.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="NonstandardMessages">Nonstandard Messages</h3>
+        <div class="member-link">[<a href="#NonstandardMessages">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The DTC protocol provides for nonstandard, custom or private messages that can be shared between Client and Server developers.</p>
+
+        <p>The Client or the Server will need to develop their own messages and fields and agree upon them. The  <b>Type</b> field of the message needs to have a number in the range of 10000 and higher. This is the only requirement.</p> 
+
+        <p>Even if different Clients and Servers who do not know each other and do not communicate with each other, use  <b>Type</b> numbers which are conflicting, this will not cause a problem because these messages are considered private.</p>
+    </div>
+</div>
+
+<div class="h2">
+    <h2 id="FieldTypeDescriptions">DTC Message Field Type Descriptions</h2>
+    <div class="member-link">[<a href="#FieldTypeDescriptions">Link</a>] - [<a href="#top">Top</a>]</div>
+
+    <div class="h3">
+        <h3 id="int32">[int32] 32-bit Integer</h3>
+        <div class="member-link">[<a href="#int32">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>The int32 type is a 32-bit integer.</p>
+    </div>
+
+
+    <div class="h3">
+        <h3 id="unsigned_int8">[unsigned int8] Unsigned 8-bit Integer</h3>
+        <div class="member-link">[<a href="#unsigned_int8">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is an 8-bit unsigned integer value.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="unsigned_int16">[unsigned int16] Unsigned 16-bit Integer</h3>
+        <div class="member-link">[<a href="#unsigned_int16">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 16-bit unsigned integer value.</p>
+    </div>
+
+
+    <div class="h3">
+        <h3 id="unsigned_int32">[unsigned int32] Unsigned 32-bit Integer</h3>
+        <div class="member-link">[<a href="#unsigned_int32">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 32 bit unsigned integer value.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="EncodingEnum">[EncodingEnum] Encoding Enumeration</h3>
+        <div class="member-link">[<a href="#EncodingEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This enumeration indicates the encoding method. It can be one of the following values.</p>
+
+        <ul>
+            <li><b>BINARY_ENCODING</b> = 0</li>
+            <li><b>BINARY_WITH_VARIABLE_LENGTH_STRINGS</b> = 1</li>
+            <li><b>JSON_ENCODING</b> = 2</li>
+            <li><b>JSON_COMPACT_ENCODING</b> = 3</li>
+            <li><b>PROTOCOL_BUFFERS</b> = 4</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="char">[char] Character</h3>
+        <div class="member-link">[<a href="#char">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a character string. The final byte is always a null terminator for Binary encoding and Binary encoding with Variable Length Strings.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="unsignedint8">[unsigned int8] Byte</h3>
+        <div class="member-link">[<a href="#unsignedint8">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a single byte. Usually it  represents a TRUE or FALSE state. Where a numeric value of 1 is TRUE and 0 is FALSE. 1 and 0 are not character values. They are integer values.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="double">[double] 64-bit Floating Point Value</h3>
+        <div class="member-link">[<a href="#double">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 64-bit floating-point value.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="float">[float] 32 bit Floating Point Value</h3>
+        <div class="member-link">[<a href="#float">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 32-bit floating-point value.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="AtBidOrAskEnum">[AtBidOrAskEnum] At Bid Or Ask Enumeration</h3>
+        <div class="member-link">[<a href="#AtBidOrAskEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><b>BID_ASK_UNSET</b> = 0</li>
+            
+            <li><b>AT_BID</b> = 1: Use AT_BID  if the aggressor of the trade was the seller.</li>
+            
+            <li><b>AT_ASK</b> = 2: Use AT_ASK  if the aggressor of the trade was the buyer.</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="LogonStatusEnum">[LogonStatusEnum] Logon Status Enumeration</h3>
+        <div class="member-link">[<a href="#LogonStatusEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <ul>
+            <li><b>LOGON_SUCCESS</b> = 1</li>
+            <li><b>LOGON_ERROR</b> = 2</li>
+            <li><b>LOGON_ERROR_NO_RECONNECT</b> = 3</li>
+            <li><b>LOGON_RECONNECT_NEW_ADDRESS</b> = 4</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="t_DateTime">[t_DateTime] Date Time</h3>
+        <div class="member-link">[<a href="#t_DateTime">Link</a>] - [<a href="#top">Top</a>]</div>
+
+
+        <p>This is a 64-bit integer UNIX time value.</p>
+
+        <p>This is the number of seconds since the UNIX epoch (January 1, 1970, 00:00:00 UTC).</p>
+
+        <p>With the DTC Protocol, the time zone is always UTC for Date-Time values.</p>
+
+        <p>In the case of Google Protocol Buffer encoding the equivalent data type used is <b>sfixed64</b>.</p>
+
+    </div>
+
+    <div class="h3">
+        <h3 id="t_DateTimeWithMilliseconds">[t_DateTimeWithMilliseconds] Date Time With Milliseconds</h3>
+        <div class="member-link">[<a href="#t_DateTimeWithMilliseconds">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 64-bit floating-point UNIX time value.</p>
+
+        <p> The integer portion is the number of seconds since the UNIX epoch (January 1, 1970, 00:00:00 UTC).</p>
+
+        <p>With the DTC Protocol, the time zone is always UTC for Date-Time values.</p>
+
+        <p>The portion of this value to the right of the decimal point is the optional number of milliseconds. Where one millisecond equals .001.</p>
+
+        <p>In the case of Google Protocol  Buffer encoding, the equivalent data type used is <b>double</b>. </p>
+    </div>
+    
+    <div class="h3">
+        <h3 id="t_DateTimeWithMillisecondsInt">[t_DateTimeWithMillisecondsInt] Date Time With Milliseconds as Integer</h3>
+        <div class="member-link">[<a href="#t_DateTimeWithMillisecondsInt">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 64-bit integer UNIX time value.</p>
+
+        <p> This is the number of milliseconds since the UNIX epoch (January 1, 1970, 00:00:00 UTC).</p>
+
+        <p>With the DTC Protocol, the time zone is always UTC for Date-Time values.</p>
+
+    </div>
+    
+    <div class="h3">
+        <h3 id="t_DateTimeWithMicrosecondsInt">[t_DateTimeWithMicrosecondsInt] Date Time With Microseconds</h3>
+        <div class="member-link">[<a href="#t_DateTimeWithMicrosecondsInt">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 64-bit integer UNIX time value.</p>
+
+        <p> The integer portion is the number of microseconds since the UNIX epoch (January 1, 1970, 00:00:00 UTC).</p>
+
+        <p>With the DTC Protocol, the time zone is always UTC for Date-Time values.</p>
+
+    </div>
+
+    <div class="h3">
+        <h3 id="t_DateTime4Byte">[t_DateTime4Byte] 4 Byte  UNIX Date-Time</h3>
+        <div class="member-link">[<a href="#t_DateTime4Byte">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This is a 32 bit integer UNIX time value.</p>
+
+        <p> This is the number of seconds since the UNIX epoch (January 1, 1970, 00:00:00 UTC).</p>
+
+        <p>With the DTC Protocol, the time zone is always UTC for Date-Time values.</p>
+
+        <p>In the case of Google Protocol  Buffer encoding, the equivalent data type used is <b>sfixed32</b>. </p>
+    </div>
+
+    <div class="h3">
+        <h3 id="MarketDataFeedStatusEnum">[MarketDataFeedStatusEnum] Market Data Feed Status Enumeration</h3>
+        <div class="member-link">[<a href="#MarketDataFeedStatusEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates if the market data feed is available it in its entirety or for an individual symbol. It can be one of the following values.</p>
+
+        <ul>
+            <li><b>MARKET_DATA_FEED_STATUS_UNSET</b> = 0</li>
+            <li><b>MARKET_DATA_FEED_UNAVAILABLE</b> = 1</li>
+            <li><b>MARKET_DATA_FEED_AVAILABLE</b> = 2</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="BuySellEnum">[BuySellEnum] Buy Sell Enumeration</h3>
+        <div class="member-link">[<a href="#BuySellEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates buy or sell. It can be one of the following values.</p>
+
+        <ul>		 
+            <li><b>BUY_SELL_UNSET</b> = 0</li>
+            <li><b>BUY</b> = 1</li>
+            <li><b>SELL</b> = 2</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="RequestActionEnum">[RequestActionEnum] Request Action Enumeration</h3>
+        <div class="member-link">[<a href="#RequestActionEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates the particular request action for market data and market depth requests. It can be one of the following values.</p>
+
+        <ul>		 
+            <li><b>SUBSCRIBE</b> = 1</li>
+            <li><b>UNSUBSCRIBE</b> = 2</li>
+            <li><b>SNAPSHOT</b> = 3</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="MarketDepthUpdateTypeEnum">[MarketDepthUpdateTypeEnum] Market Depth Update Type Enumeration</h3>
+        <div class="member-link">[<a href="#MarketDepthUpdateTypeEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates the particular market depth update type. It can be one of the following values.</p>
+
+        <ul>		 
+            <li><b>DEPTH_UNSET</b> = 0</li>
+            <li><b>MARKET_DEPTH_INSERT_UPDATE_LEVEL</b> = 1</li>
+            <li><b>MARKET_DEPTH_DELETE_LEVEL</b> = 2</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="PriceDisplayFormatEnum">[PriceDisplayFormatEnum] Price Display Format Enumeration</h3>
+        <div class="member-link">[<a href="#PriceDisplayFormatEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates the price display format for market data prices. It can be one of the following values.</p>
+        <ul>		 
+            <li><b>PRICE_DISPLAY_FORMAT_UNSET</b> =  -1</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_0</b> = 0</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_1</b> = 1</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_2</b> = 2</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_3</b> = 3</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_4</b> = 4</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_5</b> = 5</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_6</b> = 6</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_7</b> = 7</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_8</b> = 8</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DECIMAL_9</b> = 9</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_256</b> = 356</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_128</b> = 228</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_64</b> = 164</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_32_QUARTERS</b> = 136</li>
+            <li><b>RICE_DISPLAY_FORMAT_DENOMINATOR_32_HALVES</b> = 134</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_32</b> = 132</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_16</b> = 116</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_8</b> = 108</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_4</b> = 104</li>
+            <li><b>PRICE_DISPLAY_FORMAT_DENOMINATOR_2</b> = 102</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="PutCallEnum">[PutCallEnum] Put Call Enumeration</h3>
+        <div class="member-link">[<a href="#PutCallEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates if the option is a put or call. It can be one of the following values.</p>
+        <ul>		 
+            <li><b>PC_UNSET</b> = 0</li>
+            <li><b>PC_CALL</b> = 1</li>
+            <li><b>PC_PUT</b> = 2</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="SecurityTypeEnum">[SecurityTypeEnum] Security Type Enumeration</h3>
+        <div class="member-link">[<a href="#SecurityTypeEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates the Security Type. It can be one of the following values.</p>
+        <ul>
+            <li><b>SECURITY_TYPE_UNSET</b> = 0 </li>
+            <li><b>SECURITY_TYPE_FUTURES</b> = 1</li>
+            <li><b>SECURITY_TYPE_STOCK</b> = 2</li>
+            <li><b>SECURITY_TYPE_FOREX</b> = 3 (Also applies to Bitcoins)</li>
+            <li><b>SECURITY_TYPE_INDEX</b> = 4</li>
+            <li><b>SECURITY_TYPE_FUTURES_STRATEGY</b> = 5</li>
+            <li><b>SECURITY_TYPE_FUTURES_OPTION</b> = 7</li>
+            <li><b>SECURITY_TYPE_STOCK_OPTION</b> = 6</li>
+            <li><b>SECURITY_TYPE_INDEX_OPTION</b> = 8</li>
+            <li><b>SECURITY_TYPE_BOND</b> = 9</li>
+            <li><b>SECURITY_TYPE_MUTUAL_FUND</b> = 10</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="SearchTypeEnum">[SearchTypeEnum] Search Type Enumeration</h3>
+        <div class="member-link">[<a href="#SearchTypeEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates the Search Type. It can be one of the following values.</p>
+        <ul>
+            <li><b>SEARCH_TYPE_UNSET</b> = 0 </li>
+            <li><b>SEARCH_TYPE_BY_SYMBOL</b> = 1</li>
+            <li><b>SEARCH_TYPE_BY_DESCRIPTION</b> = 2</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="OrderTypeEnum">[OrderTypeEnum] Order Type Enumeration</h3>
+        <div class="member-link">[<a href="#OrderTypeEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates the order type. It can be one of the following values.</p>
+
+        <ul>
+            <li><b>ORDER_TYPE_UNSET</b> = 0</li>
+            <li><b>ORDER_TYPE_MARKET</b> = 1</li>
+            <li><b>ORDER_TYPE_LIMIT</b> = 2</li>
+            <li><b>ORDER_TYPE_STOP</b> = 3</li>
+            <li><b>ORDER_TYPE_STOP_LIMIT</b> = 4</li>
+            <li><b>ORDER_TYPE_MARKET_IF_TOUCHED</b> = 5</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="TimeInForceEnum">[TimeInForceEnum] Time In Force Enumeration</h3>
+        <div class="member-link">[<a href="#TimeInForceEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p> This enumeration indicates the Time in Force for orders. It can be one of the following values.</p>
+
+        <ul>
+            <li><b>TIF_UNSET</b> = 0</li>
+            <li><b>TIF_DAY</b> = 1</li>
+            <li><b>TIF_GOOD_TILL_CANCELED</b> = 2</li>
+            <li><b>TIF_GOOD_TILL_DATE_TIME</b> = 3</li>
+            <li><b>TIF_IMMEDIATE_OR_CANCEL</b> = 4</li>
+            <li><b>TIF_ALL_OR_NONE</b> = 5</li>
+            <li><b>TIF_FILL_OR_KILL</b> = 6</li>
+        </ul>
+        
+        <p>The Client needs to understand that not all of these will be supported for the particular Symbol being traded or by the Server. In which case, the order can be rejected.</p>
+    </div>
+
+    <div class="h3">
+        <h3 id="OrderStatusEnum">[OrderStatusEnum] Order Status Enumeration</h3>
+        <div class="member-link">[<a href="#OrderStatusEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This enumeration indicates the Order Status. It can be one of the following values.</p>
+
+        <ul>
+            <li><b>ORDER_STATUS_UNSPECIFIED</b> = 0</li>
+            <li><b>ORDER_STATUS_ORDER_SENT</b> = 1</li>
+            <li><b>ORDER_STATUS_PENDING_OPEN</b> = 2</li>
+            <li><b>ORDER_STATUS_PENDING_CHILD</b> = 3</li>
+            <li><b>ORDER_STATUS_OPEN</b> = 4</li>
+            <li><b>ORDER_STATUS_PENDING_CANCEL_REPLACE</b> = 5</li>
+            <li><b>ORDER_STATUS_PENDING_CANCEL</b> = 6</li>
+            <li><b>ORDER_STATUS_FILLED</b> = 7</li>
+            <li><b>ORDER_STATUS_CANCELED</b> = 8</li>
+            <li><b>ORDER_STATUS_REJECTED</b> = 9</li>
+            <li><b>ORDER_STATUS_PARTIALLY_FILLED</b> = 10</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="HistoricalDataIntervalEnum">[HistoricalDataIntervalEnum] Historical Data Interval Enumeration</h3>
+        <div class="member-link">[<a href="#HistoricalDataIntervalEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This indicates the time interval for historical price data records. It can be one of the following values.</p>
+
+        <ul>
+            <li><b>INTERVAL_TICK</b> = 0</li>
+            <li><b>INTERVAL_1_SECOND</b> = 1</li>
+            <li><b>INTERVAL_2_SECONDS</b> = 2</li>
+            <li><b>INTERVAL_4_SECONDS</b> = 4</li>
+            <li><b>INTERVAL_5_SECONDS</b> = 5</li>
+            <li><b>INTERVAL_10_SECONDS</b> = 10</li>
+            <li><b>INTERVAL_30_SECONDS</b> = 30</li>
+            <li><b>INTERVAL_1_MINUTE</b> = 60</li>
+            <li><b>INTERVAL_1_DAY</b> = 86400</li>
+            <li><b>INTERVAL_1_WEEK</b> = 604800</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="OrderUpdateReasonEnum">[OrderUpdateReasonEnum] Order Update Reason Enumeration</h3>
+        <div class="member-link">[<a href="#OrderUpdateReasonEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p> This indicates the reason for sending an Order Update message. It can be one of the following values.</p>
+
+        <ul>
+            <li><b>ORDER_UPDATE_REASON_UNSET</b> = 0</li>
+            <li><b>OPEN_ORDERS_REQUEST_RESPONSE</b> = 1</li>
+            <li><b>NEW_ORDER_ACCEPTED</b> = 2</li>
+            <li><b>GENERAL_ORDER_UPDATE</b> = 3</li>
+            <li><b>ORDER_FILLED</b> = 4</li>
+            <li><b>ORDER_FILLED_PARTIALLY</b> = 5</li>
+            <li><b>ORDER_CANCELED</b> = 6</li>
+            <li><b>ORDER_CANCEL_REPLACE_COMPLETE</b> = 7</li>
+            <li><b>NEW_ORDER_REJECTED</b> = 8</li>
+            <li><b>ORDER_CANCEL_REJECTED</b> = 9</li>
+            <li><b>ORDER_CANCEL_REPLACE_REJECTED</b> = 10</li>
+        </ul>
+    </div>
+
+    <div class="h3">
+        <h3 id="OpenCloseTradeEnum">[OpenCloseTradeEnum] Open Close Trade Enumeration</h3>
+        <div class="member-link">[<a href="#OpenCloseTradeEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>For orders this field specifies whether the order opens a new Position or increases an existing Position, or closes an existing Position or decreases an existing Position.</p>
+
+        <p>For order fills this field specifies whether the fill opened a new Position or  increased an existing Position, or closed an existing Position or  decreased an existing Position.</p>
+
+
+        <p> The use of this field for new orders depends upon the particular market/security as specified by the Symbol and Exchange fields and whether the Server requires it. Clients should always try to set this field for new orders, however the Server may not use it. This field is not used for futures.</p>
+
+        <p>It can be one of the following values.</p>
+
+        <ul>
+            <li><b>TRADE_UNSET</b> = 0</li>
+            <li><b>TRADE_OPEN</b> = 1</li>
+            <li><b>TRADE_CLOSE</b> = 2</li>
+        </ul>
+    </div>
+
+	<div class="h3">
+        <h3 id="HistoricalPriceDataRejectReasonCodeEnum">[HistoricalPriceDataRejectReasonCodeEnum] Historical Price Data Reject Reason Code Enumeration</h3>
+        <div class="member-link">[<a href="#HistoricalPriceDataRejectReasonCodeEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p> The following enumerations are for the <a href="/index.php?page=doc/DTCMessages_HistoricalPriceDataMessages.php#Messages-HISTORICAL_PRICE_DATA_REJECT">Historical Price Data Reject</a> message. </p>
+
+        <ul>
+            <li><b>HPDR_UNSET</b> = 0. The historical price data reject code is unset.</li>
+            
+            <li><b>HPDR_UNABLE_TO_SERVE_DATA_RETRY_IN_SPECIFIED_SECONDS</b> = 1. The server is unable to  serve the historical data request and the request should be retried in the specified number of seconds. A properly implemented high-performance server should <em>never</em> utilize this reject code.</li>
+            
+            <li><b>HPDR_UNABLE_TO_SERVE_DATA_DO_NOT_RETRY</b> = 2. The server is unable to serve the historical data request and there should be no retry.</li>
+			
+            <li><b>HPDR_DATA_REQUEST_OUTSIDE_BOUNDS_OF_AVAILABLE_DATA</b> = 3. The Date-Time range of historical data requested is outside the bounds of the available data.</li>
+			
+            <li><b>HPDR_GENERAL_REJECT_ERROR</b> = 4. There is another undocumented reason the server cannot accept the historical data request and it has been rejected.</li>
+        </ul>
+    </div>
+    
+	<div class="h3">
+        <h3 id="PartialFillHandlingEnum">[PartialFillHandlingEnum] Partial Fill Handling Enumeration</h3>
+        <div class="member-link">[<a href="#PartialFillHandlingEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This enumeration is for the OCO order messages.</p>
+
+        <ul>
+            <li><b>PARTIAL_FILL_UNSET</b> = 0. Indicates no special partial fill handling.</li>
+           
+            <li><b>PARTIAL_FILL_HANDLING_REDUCE_QUANTITY</b> = 1. This specifies that when there is a partial fill of one of the orders in the OCO order set, that the quantity of the other order needs to be reduced by   the quantity of the order fill.</li>
+            
+            <li><b>PARTIAL_FILL_HANDLING_IMMEDIATE_CANCEL</b> = 2. This specifies that when there is a partial fill of one of the orders of the OCO order set, that the other order needs to be immediately canceled.</li>
+        </ul>
+    </div>	
+    
+    <div class="h3">
+        <h3 id="FinalUpdateInBatchEnum">[FinalUpdateInBatchEnum] Final Update In Batch Enumeration</h3>
+        <div class="member-link">[<a href="#FinalUpdateInBatchEnum">Link</a>] - [<a href="#top">Top</a>]</div>
+
+        <p>This enumeration is for market depth updates.</p>
+
+        <ul>
+            <li><b>FINAL_UPDATE_UNSET</b> = 0. Indicates the value is unset.</li>
+           
+            <li><b>FINAL_UPDATE_TRUE</b> = 1.  Indicates the market depth update message is the final message in the batch.</li>
+            
+            <li><b>FINAL_UPDATE_FALSE</b> = 2. Indicates the market depth update message is not the final update in the batch.</li>
+            <li><b>FINAL_UPDATE_BEGIN_BATCH</b> = 3. Indicates the market depth update message is the first update in the batch.</li>
+        </ul>
+    </div>
+    
+</div>
+
+
+<hr><p>*Last modified Friday, 14th August, 2026.</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+                <div id="footer" style="font-size:66%" class="ClearBoth">
+                    <hr>
+                    <a href="/index.php?page=doc/PurchaseInformation.php" target="_blank" rel="noopener noreferrer">Service Terms and Refund Policy</a>
+                    <br><br>
+                    
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript" src="/jscripts/Minified.js"></script>
+        <script type="text/javascript">
+
+        </script>
+    </body>
+</html>  

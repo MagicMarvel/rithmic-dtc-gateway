@@ -4,8 +4,12 @@
 //! `DTCProtocol.h`, protocol version 8. Market data is deliberately not
 //! advertised until the corresponding messages are implemented.
 
+#[cfg(test)]
+#[path = "dtc_audit_tests.rs"]
+mod audit_tests;
+
 use std::{
-    collections::HashSet,
+    collections::{HashSet, VecDeque},
     error::Error,
     fmt, io,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -18,6 +22,7 @@ use tokio::{
     time,
 };
 
+use crate::market_data::MarketSnapshot;
 use crate::order_book::{DepthLevel, LevelUpdate};
 
 pub const CURRENT_VERSION: i32 = 8;
@@ -33,6 +38,7 @@ pub const MARKET_DATA_FEED_STATUS: u16 = 100;
 pub const MARKET_DATA_REQUEST: u16 = 101;
 pub const MARKET_DATA_REJECT: u16 = 103;
 pub const MARKET_DATA_SNAPSHOT: u16 = 104;
+pub const MARKET_DATA_UPDATE_SESSION_VOLUME: u16 = 113;
 pub const MARKET_DATA_UPDATE_LAST_TRADE_SNAPSHOT: u16 = 134;
 pub const MARKET_DATA_UPDATE_TRADE_V2: u16 = 147;
 pub const MARKET_DATA_UPDATE_BID_ASK_V2: u16 = 148;
@@ -113,360 +119,15 @@ const LOGON_RESULT_TEXT: &str = "Logon successful";
 
 const SUBSCRIBE: i32 = 1;
 const UNSUBSCRIBE: i32 = 2;
+const SNAPSHOT: i32 = 3;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Instrument {
-    pub symbol: String,
-    pub exchange: String,
-    pub underlying_symbol: String,
-    pub description: String,
-    pub min_price_increment: f32,
-    pub price_display_format: i32,
-    pub currency_value_per_increment: f32,
-    pub contract_size: f32,
-    pub currency: String,
-}
-
-impl Instrument {
-    pub fn es(symbol: impl Into<String>, exchange: impl Into<String>) -> Result<Self, String> {
-        let symbol = symbol.into();
-        let exchange = exchange.into();
-        if !symbol.starts_with("ES") || symbol.len() < 4 {
-            return Err(format!("{symbol} is not an ES futures contract symbol"));
-        }
-        if exchange.trim().is_empty() {
-            return Err("ES exchange must not be empty".to_owned());
-        }
-        Ok(Self {
-            symbol,
-            exchange,
-            underlying_symbol: "ES".to_owned(),
-            description: "E-mini S&P 500 Futures".to_owned(),
-            min_price_increment: 0.25,
-            price_display_format: 2,
-            currency_value_per_increment: 12.5,
-            contract_size: 50.0,
-            currency: "USD".to_owned(),
-        })
-    }
-
-    fn matches(&self, symbol: &str, exchange: &str) -> bool {
-        (symbol.eq_ignore_ascii_case(&self.symbol)
-            && (exchange.is_empty() || exchange.eq_ignore_ascii_case(&self.exchange)))
-            || (exchange.is_empty()
-                && [
-                    format!("{}-{}", self.symbol, self.exchange),
-                    format!("{}.{}", self.symbol, self.exchange),
-                ]
-                .iter()
-                .any(|combined| symbol.eq_ignore_ascii_case(combined)))
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MarketEvent {
-    FeedStatus {
-        available: bool,
-    },
-    LastTrade {
-        symbol_id: u32,
-        price: f64,
-        volume: f64,
-        datetime_us: i64,
-        at_bid_or_ask: u8,
-        is_snapshot: bool,
-    },
-    BestBidAsk {
-        symbol_id: u32,
-        bid_price: f64,
-        bid_quantity: f64,
-        ask_price: f64,
-        ask_quantity: f64,
-        datetime_us: i64,
-    },
-    DepthUpdate {
-        symbol_id: u32,
-        update: LevelUpdate,
-        datetime_us: i64,
-        is_final: bool,
-    },
-    DepthSnapshotLevel {
-        symbol_id: u32,
-        level: DepthLevel,
-        datetime_us: i64,
-        is_first: bool,
-        is_last: bool,
-    },
-    FeedError(String),
-}
-
-#[derive(Debug)]
-pub(crate) enum MarketCommand {
-    LoadCatalog {
-        preferred_underlying: String,
-        response: oneshot::Sender<Result<Vec<Instrument>, String>>,
-    },
-    ListCatalogExchanges {
-        response: oneshot::Sender<Result<Vec<String>, String>>,
-    },
-    SearchCatalog {
-        search_text: String,
-        exchange: String,
-        response: oneshot::Sender<Result<Vec<Instrument>, String>>,
-    },
-    ResolveCatalogInstrument {
-        symbol: String,
-        exchange: String,
-        response: oneshot::Sender<Result<Instrument, String>>,
-    },
-    Subscribe {
-        symbol_id: u32,
-        symbol: String,
-        exchange: String,
-        response: oneshot::Sender<Result<(), String>>,
-    },
-    Unsubscribe {
-        symbol_id: u32,
-        response: oneshot::Sender<Result<(), String>>,
-    },
-    SubscribeDepth {
-        symbol_id: u32,
-        symbol: String,
-        exchange: String,
-        tick_size: f64,
-        max_levels: usize,
-        response: oneshot::Sender<Result<Vec<DepthLevel>, String>>,
-    },
-    UnsubscribeDepth {
-        symbol_id: u32,
-        response: oneshot::Sender<Result<(), String>>,
-    },
-}
-
-pub struct MarketDataClient {
-    pub(crate) commands: mpsc::Sender<MarketCommand>,
-    pub(crate) events: mpsc::Receiver<MarketEvent>,
-    pub(crate) publish_catalog_at_logon: bool,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct HistoricalRequest {
-    pub request_id: i32,
-    pub symbol: String,
-    pub exchange: String,
-    pub record_interval: i32,
-    pub start_time: i64,
-    pub end_time: i64,
-    pub max_days: u32,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum HistoricalRecord {
-    Tick {
-        datetime_us: i64,
-        price: f64,
-        volume: f64,
-        at_bid_or_ask: u16,
-    },
-    Bar {
-        start_datetime_us: i64,
-        open: f64,
-        high: f64,
-        low: f64,
-        close: f64,
-        volume: f64,
-        num_trades: u32,
-        bid_volume: f64,
-        ask_volume: f64,
-    },
-}
-
-impl HistoricalRecord {
-    pub(crate) fn datetime_us(&self) -> i64 {
-        match self {
-            Self::Tick { datetime_us, .. } => *datetime_us,
-            Self::Bar {
-                start_datetime_us, ..
-            } => *start_datetime_us,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct HistoricalResponse {
-    pub request_id: i32,
-    pub record_interval: i32,
-    pub records: Vec<HistoricalRecord>,
-    pub is_final: bool,
-}
-
-pub struct HistoryDataClient {
-    commands: mpsc::Sender<(
-        HistoricalRequest,
-        mpsc::Sender<Result<HistoricalResponse, String>>,
-    )>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TradeAccount {
-    pub account_id: String,
-    pub currency: String,
-    pub trading_disabled: bool,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TradingOrder {
-    pub request_id: i32,
-    pub symbol: String,
-    pub exchange: String,
-    pub account_id: String,
-    pub client_order_id: String,
-    pub server_order_id: String,
-    pub exchange_order_id: String,
-    pub order_status: i32,
-    pub update_reason: i32,
-    pub order_type: i32,
-    pub buy_sell: i32,
-    pub price1: f64,
-    pub price2: f64,
-    pub quantity: f64,
-    pub filled_quantity: f64,
-    pub remaining_quantity: f64,
-    pub average_fill_price: f64,
-    pub last_fill_price: f64,
-    pub last_fill_quantity: f64,
-    pub last_fill_datetime_ms: i64,
-    pub last_fill_execution_id: String,
-    pub info_text: String,
-    pub time_in_force: i32,
-    pub is_snapshot: bool,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TradingPosition {
-    pub symbol: String,
-    pub exchange: String,
-    pub account_id: String,
-    pub quantity: f64,
-    pub average_price: f64,
-    pub open_profit_loss: f64,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct AccountBalance {
-    pub account_id: String,
-    pub currency: String,
-    pub cash_balance: f64,
-    pub available_funds: f64,
-    pub open_profit_loss: f64,
-    pub daily_profit_loss: f64,
-    pub trading_disabled: bool,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct NewOrderRequest {
-    pub symbol: String,
-    pub exchange: String,
-    pub account_id: String,
-    pub client_order_id: String,
-    pub order_type: i32,
-    pub buy_sell: i32,
-    pub price1: f64,
-    pub price2: f64,
-    pub quantity: f64,
-    pub time_in_force: i32,
-    pub is_automated: bool,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ModifyOrderRequest {
-    pub server_order_id: String,
-    pub client_order_id: String,
-    pub account_id: String,
-    pub price1: Option<f64>,
-    pub price2: Option<f64>,
-    pub quantity: f64,
-    pub time_in_force: i32,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct CancelOrderRequest {
-    pub server_order_id: String,
-    pub client_order_id: String,
-    pub account_id: String,
-}
-
-#[derive(Debug)]
-pub(crate) enum TradingCommand {
-    Accounts(oneshot::Sender<Result<Vec<TradeAccount>, String>>),
-    OpenOrders(oneshot::Sender<Result<Vec<TradingOrder>, String>>),
-    Positions(oneshot::Sender<Result<Vec<TradingPosition>, String>>),
-    Balance(oneshot::Sender<Result<AccountBalance, String>>),
-    Submit(NewOrderRequest, oneshot::Sender<Result<(), String>>),
-    Modify(ModifyOrderRequest, oneshot::Sender<Result<(), String>>),
-    Cancel(CancelOrderRequest, oneshot::Sender<Result<(), String>>),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TradingEvent {
-    Order(TradingOrder),
-    Position(TradingPosition),
-    Balance(AccountBalance),
-    Error(String),
-}
-
-pub struct TradingDataClient {
-    pub(crate) commands: mpsc::Sender<TradingCommand>,
-    pub(crate) events: mpsc::Receiver<TradingEvent>,
-}
-
-impl TradingDataClient {
-    pub(crate) fn new(
-        commands: mpsc::Sender<TradingCommand>,
-        events: mpsc::Receiver<TradingEvent>,
-    ) -> Self {
-        Self { commands, events }
-    }
-}
-
-impl HistoryDataClient {
-    pub(crate) fn new(
-        commands: mpsc::Sender<(
-            HistoricalRequest,
-            mpsc::Sender<Result<HistoricalResponse, String>>,
-        )>,
-    ) -> Self {
-        Self { commands }
-    }
-}
-
-impl MarketDataClient {
-    pub(crate) fn new(
-        commands: mpsc::Sender<MarketCommand>,
-        events: mpsc::Receiver<MarketEvent>,
-    ) -> Self {
-        Self {
-            commands,
-            events,
-            publish_catalog_at_logon: false,
-        }
-    }
-
-    pub(crate) fn with_logon_catalog(
-        commands: mpsc::Sender<MarketCommand>,
-        events: mpsc::Receiver<MarketEvent>,
-    ) -> Self {
-        Self {
-            commands,
-            events,
-            publish_catalog_at_logon: true,
-        }
-    }
-}
-
-pub type MarketClientFactory = std::sync::Arc<dyn Fn() -> MarketDataClient + Send + Sync>;
-pub type HistoryClientFactory = std::sync::Arc<dyn Fn() -> HistoryDataClient + Send + Sync>;
-pub type TradingClientFactory = std::sync::Arc<dyn Fn() -> TradingDataClient + Send + Sync>;
+pub use crate::market_gateway::{
+    AccountBalance, CancelOrderRequest, HistoricalRecord, HistoricalRequest, HistoricalResponse,
+    HistoryClientFactory, HistoryDataClient, Instrument, MarketClientFactory, MarketDataClient,
+    MarketEvent, ModifyOrderRequest, NewOrderRequest, TradeAccount, TradingClientFactory,
+    TradingDataClient, TradingEvent, TradingOrder, TradingPosition,
+};
+pub(crate) use crate::market_gateway::{MarketCommand, TradingCommand};
 
 #[derive(Debug)]
 pub enum SessionError {
@@ -604,7 +265,16 @@ pub async fn handle_connection_with_all_services(
                 stream.write_all(&encoding_response()).await?;
             }
             LOGON_REQUEST => {
-                let heartbeat_interval = parse_heartbeat_interval(&frame.bytes)?;
+                let heartbeat_interval = match parse_heartbeat_interval(&frame.bytes) {
+                    Ok(interval) => interval,
+                    Err(error) => {
+                        let mut response = logon_response(false, false, false);
+                        put_i32(&mut response, 8, 3); // LOGON_ERROR_NO_RECONNECT
+                        put_fixed_string(&mut response[12..108], &error.to_string());
+                        stream.write_all(&response).await?;
+                        return Ok(());
+                    }
+                };
                 stream
                     .write_all(&logon_response(
                         market_is_supported,
@@ -644,15 +314,29 @@ pub async fn handle_connection_with_all_services(
     let peer_silence = time::sleep(peer_timeout);
     tokio::pin!(peer_silence);
 
+    let (mut reader, mut writer) = stream.into_split();
+    let mut frames = FrameReader::default();
+    let mut pending_frames = VecDeque::new();
+    let mut has_streaming_requests = false;
+    let mut historical_connection = false;
     let mut published_catalog = Vec::new();
     let mut published_catalog_keys = HashSet::new();
     if publish_catalog_at_logon {
-        let mut catalog = catalog_load(market_commands.as_ref(), &instrument.underlying_symbol)
-            .await
-            .unwrap_or_else(|error| {
-                eprintln!("[DTC] Rithmic catalog preload failed: {error}");
-                Vec::new()
-            });
+        let mut catalog = pump_request(
+            catalog_load(market_commands.as_ref(), &instrument.underlying_symbol),
+            &mut reader,
+            &mut frames,
+            &mut pending_frames,
+            &mut writer,
+            &mut heartbeat,
+            &mut peer_silence,
+            peer_timeout,
+        )
+        .await?
+        .unwrap_or_else(|error| {
+            eprintln!("[DTC] Rithmic catalog preload failed: {error}");
+            Vec::new()
+        });
         if !catalog
             .iter()
             .any(|entry| instrument.matches(&entry.symbol, &entry.exchange))
@@ -681,16 +365,14 @@ pub async fn handle_connection_with_all_services(
         }));
         published_catalog = security_definition_responses(0, &catalog);
         for response in &published_catalog {
-            stream.write_all(&response).await?;
+            writer.write_all(&response).await?;
         }
         eprintln!("[DTC] Finished publishing Symbol Settings catalog");
     }
 
-    let (mut reader, mut writer) = stream.into_split();
-
     loop {
         tokio::select! {
-            frame = read_frame(&mut reader) => {
+            frame = next_frame(&mut reader, &mut frames, &mut pending_frames) => {
                 match frame? {
                     Some(frame) => {
                         // The DTC specification treats any received message as proof that the
@@ -698,6 +380,10 @@ pub async fn handle_connection_with_all_services(
                         peer_silence.as_mut().reset(time::Instant::now() + peer_timeout);
                         if frame.message_type == LOGOFF {
                             return Ok(());
+                        }
+                        if matches!(frame.message_type, MARKET_DATA_REQUEST | MARKET_DEPTH_REQUEST) || is_trading_message(frame.message_type) {
+                            has_streaming_requests = true;
+                            historical_connection = false;
                         }
                         if is_symbol_discovery_request(frame.message_type) {
                             let request_id = if frame.bytes.len() >= 8 {
@@ -710,13 +396,12 @@ pub async fn handle_connection_with_all_services(
                                 symbol_discovery_message_name(frame.message_type),
                                 frame.message_type,
                             );
-                            let responses = handle_symbol_discovery_request(
+                            let responses = pump_request(handle_symbol_discovery_request(
                                 frame.message_type,
                                 &frame.bytes,
                                 &instrument,
                                 market_commands.as_ref(),
-                            )
-                            .await?;
+                            ), &mut reader, &mut frames, &mut pending_frames, &mut writer, &mut heartbeat, &mut peer_silence, peer_timeout).await??;
                             eprintln!(
                                 "[DTC] Symbol discovery response: RequestID={request_id}, messages={}",
                                 responses.len(),
@@ -744,24 +429,25 @@ pub async fn handle_connection_with_all_services(
                                 }
                             }
                         } else if frame.message_type == MARKET_DATA_REQUEST {
-                            let response = handle_market_data_request(
+                            let response = pump_request(handle_market_data_request(
                                 &frame.bytes,
                                 &instrument,
                                 market_commands.as_ref(),
-                            ).await?;
+                            ), &mut reader, &mut frames, &mut pending_frames, &mut writer, &mut heartbeat, &mut peer_silence, peer_timeout).await??;
                             if let Some(response) = response {
                                 writer.write_all(&response).await?;
                             }
                         } else if frame.message_type == MARKET_DEPTH_REQUEST {
-                            let responses = handle_market_depth_request(
+                            let responses = pump_request(handle_market_depth_request(
                                 &frame.bytes,
                                 &instrument,
                                 market_commands.as_ref(),
-                            ).await?;
+                            ), &mut reader, &mut frames, &mut pending_frames, &mut writer, &mut heartbeat, &mut peer_silence, peer_timeout).await??;
                             for response in responses {
                                 writer.write_all(&response).await?;
                             }
                         } else if frame.message_type == HISTORICAL_PRICE_DATA_REQUEST {
+                            historical_connection = !has_streaming_requests;
                             if history_request_in_progress {
                                 let request_id = if frame.bytes.len() >= 8 {
                                     read_i32(&frame.bytes, 4)
@@ -776,12 +462,11 @@ pub async fn handle_connection_with_all_services(
                                     .await?;
                             } else {
                                 history_request_in_progress = true;
-                                start_historical_request(
+                                pump_request(start_historical_request(
                                     &frame.bytes,
                                     history_commands.as_ref(),
                                     history_wire_tx.clone(),
-                                )
-                                .await?;
+                                ), &mut reader, &mut frames, &mut pending_frames, &mut writer, &mut heartbeat, &mut peer_silence, peer_timeout).await??;
                             }
                         } else if is_trading_message(frame.message_type) {
                             eprintln!(
@@ -789,14 +474,13 @@ pub async fn handle_connection_with_all_services(
                                 frame.message_type,
                                 frame.bytes.len(),
                             );
-                            let responses = handle_trading_request(
+                            let responses = pump_request(handle_trading_request(
                                 frame.message_type,
                                 &frame.bytes,
                                 &instrument,
                                 market_commands.as_ref(),
                                 trading_commands.as_ref(),
-                            )
-                            .await?;
+                            ), &mut reader, &mut frames, &mut pending_frames, &mut writer, &mut heartbeat, &mut peer_silence, peer_timeout).await??;
                             eprintln!(
                                 "[DTC] Trading response: request_type={}, messages={}",
                                 frame.message_type,
@@ -804,6 +488,9 @@ pub async fn handle_connection_with_all_services(
                             );
                             for response in responses {
                                 writer.write_all(&response).await?;
+                                if u16::from_le_bytes(response[2..4].try_into().unwrap()) == LOGOFF {
+                                    return Ok(());
+                                }
                             }
                         }
                     }
@@ -834,6 +521,9 @@ pub async fn handle_connection_with_all_services(
             history_message = history_wire_rx.recv(), if history_request_in_progress => {
                 if let Some(history_message) = history_message {
                     writer.write_all(&history_message.bytes).await?;
+                    if historical_connection {
+                        peer_silence.as_mut().reset(time::Instant::now() + peer_timeout.max(Duration::from_secs(30)));
+                    }
                     if history_message.is_final {
                         // IsFinalRecord (or NoRecordsToReturn in the response header) is the
                         // protocol completion signal. Sierra 2945 treats a server LOGOFF as a
@@ -843,7 +533,7 @@ pub async fn handle_connection_with_all_services(
                     }
                 }
             }
-            _ = &mut peer_silence => {
+            _ = &mut peer_silence, if !(historical_connection && history_request_in_progress) => {
                 writer
                     .write_all(&logoff_message("Client heartbeat timeout", false))
                     .await?;
@@ -856,6 +546,54 @@ pub async fn handle_connection_with_all_services(
 
 fn heartbeat_timeout(interval: Duration) -> Duration {
     interval.saturating_mul(2)
+}
+
+async fn next_frame<R: AsyncRead + Unpin>(
+    reader: &mut R,
+    frames: &mut FrameReader,
+    pending: &mut VecDeque<Frame>,
+) -> Result<Option<Frame>, SessionError> {
+    if let Some(frame) = pending.pop_front() {
+        return Ok(Some(frame));
+    }
+    frames.read(reader).await
+}
+
+/// Maintain transport liveness while a sequential business request is pending.
+/// Do not reorder new business requests, or retry a possibly submitted order.
+#[allow(clippy::too_many_arguments)]
+async fn pump_request<F: std::future::Future>(
+    request: F,
+    reader: &mut tokio::net::tcp::OwnedReadHalf,
+    frames: &mut FrameReader,
+    pending: &mut VecDeque<Frame>,
+    writer: &mut tokio::net::tcp::OwnedWriteHalf,
+    heartbeat: &mut time::Interval,
+    peer_silence: &mut std::pin::Pin<&mut time::Sleep>,
+    peer_timeout: Duration,
+) -> Result<F::Output, SessionError> {
+    tokio::pin!(request);
+    loop {
+        tokio::select! {
+            result = &mut request => return Ok(result),
+            _ = heartbeat.tick() => writer.write_all(&heartbeat_message()).await?,
+            frame = frames.read(reader) => {
+                let Some(frame) = frame? else { return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "Client disconnected").into()); };
+                peer_silence.as_mut().reset(time::Instant::now() + peer_timeout);
+                if frame.message_type == LOGOFF {
+                    return Err(io::Error::new(io::ErrorKind::Interrupted, "Client logged off").into());
+                }
+                if frame.message_type != HEARTBEAT {
+                    if pending.len() >= 64 { return Err(SessionError::Protocol("Too many queued requests".to_owned())); }
+                    pending.push_back(frame);
+                }
+            }
+            _ = peer_silence.as_mut() => {
+                writer.write_all(&logoff_message("Client heartbeat timeout", false)).await?;
+                return Err(io::Error::new(io::ErrorKind::TimedOut, "Client heartbeat timeout").into());
+            }
+        }
+    }
 }
 
 struct HistoryWireMessage {
@@ -934,10 +672,22 @@ async fn start_historical_request(
         .map_err(|_| SessionError::Protocol("Rithmic history worker stopped".to_owned()))?;
     tokio::spawn(async move {
         let mut send_header = true;
+        let mut pending_record = None;
         while let Some(result) = response_rx.recv().await {
             match result {
-                Ok(response) => {
+                Ok(mut response) => {
                     let is_final = response.is_final;
+                    // Retain one real record so an empty final batch can mark
+                    // that record final without inventing a trade or second header.
+                    if let Some(record) = pending_record.take() {
+                        response.records.insert(0, record);
+                    }
+                    if !is_final {
+                        pending_record = response.records.pop();
+                        if response.records.is_empty() {
+                            continue;
+                        }
+                    }
                     eprintln!(
                         "[DTC] Historical response chunk: RequestID={}, interval={}s, records={}, final={}",
                         response.request_id,
@@ -948,7 +698,7 @@ async fn start_historical_request(
                     stream_historical_response(response, &output, send_header).await;
                     send_header = false;
                     if is_final {
-                        break;
+                        return;
                     }
                 }
                 Err(error) => {
@@ -961,10 +711,19 @@ async fn start_historical_request(
                             is_final: true,
                         })
                         .await;
-                    break;
+                    return;
                 }
             }
         }
+        let _ = output
+            .send(HistoryWireMessage {
+                bytes: historical_reject(
+                    request_id,
+                    "History worker ended before the final response",
+                ),
+                is_final: true,
+            })
+            .await;
     });
     Ok(())
 }
@@ -1165,6 +924,19 @@ fn trade_account_response(
     message
 }
 
+fn empty_trade_accounts(request_id: i32) -> Vec<u8> {
+    trade_account_response(
+        request_id,
+        &TradeAccount {
+            account_id: String::new(),
+            currency: String::new(),
+            trading_disabled: true,
+        },
+        0,
+        1,
+    )
+}
+
 fn encode_order_update(
     order: &TradingOrder,
     index: usize,
@@ -1235,6 +1007,59 @@ fn no_orders_update(request_id: i32) -> Vec<u8> {
 
 fn order_rejection(client_id: &str, account_id: &str, reason: &str) -> Vec<u8> {
     order_action_rejection("", client_id, account_id, 8, reason)
+}
+
+fn new_order_rejection(request: &NewOrderRequest, reason: &str) -> Vec<u8> {
+    let mut message = order_rejection(&request.client_order_id, &request.account_id, reason);
+    put_fixed_string(&mut message[16..80], &request.symbol);
+    put_fixed_string(&mut message[80..96], &request.exchange);
+    message
+}
+
+async fn reject_order_action(
+    commands: Option<&mpsc::Sender<TradingCommand>>,
+    server_id: &str,
+    client_id: &str,
+    account_id: &str,
+    reason: i32,
+    text: &str,
+) -> Vec<u8> {
+    let state = if let Some(commands) = commands {
+        let (tx, rx) = oneshot::channel();
+        if commands
+            .send(TradingCommand::OrderState(server_id.to_owned(), tx))
+            .await
+            .is_ok()
+        {
+            rx.await.ok().and_then(Result::ok)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    let mut message = order_action_rejection(server_id, client_id, account_id, reason, text);
+    match state {
+        Some(Some(order)) if account_id.is_empty() || order.account_id == account_id => {
+            message = encode_order_update(&order, 0, 1, false);
+            put_i32(&mut message, 4, 0);
+            put_i32(&mut message, 228, reason);
+            put_fixed_string(&mut message[160..192], client_id);
+            put_fixed_string(&mut message[424..520], text);
+            // A rejected operation is not a new execution.
+            put_f64(&mut message, 304, f64::MAX);
+            put_i64(&mut message, 312, 0);
+            put_f64(&mut message, 320, f64::MAX);
+            message[328..392].fill(0);
+        }
+        Some(None) => {
+            message[128..160].fill(0);
+        }
+        _ => {
+            put_i32(&mut message, 224, 0);
+        } // state unavailable, not a rejected order
+    }
+    message
 }
 
 fn order_action_rejection(
@@ -1363,10 +1188,121 @@ where
     let mut bytes = vec![0_u8; size];
     bytes[..4].copy_from_slice(&header);
     reader.read_exact(&mut bytes[4..]).await?;
-    Ok(Some(Frame {
+    Ok(Some(decode_frame(message_type, bytes)?))
+}
+
+/// A read may be canceled by select! after consuming bytes. Keep all consumed
+/// bytes outside the future so the next poll resumes the same frame.
+#[derive(Default)]
+struct FrameReader {
+    bytes: Vec<u8>,
+}
+
+impl FrameReader {
+    async fn read<R: AsyncRead + Unpin>(
+        &mut self,
+        reader: &mut R,
+    ) -> Result<Option<Frame>, SessionError> {
+        loop {
+            let target = if self.bytes.len() < 4 {
+                4
+            } else {
+                let size = u16::from_le_bytes([self.bytes[0], self.bytes[1]]) as usize;
+                if size < 4 {
+                    return Err(SessionError::Protocol("invalid DTC frame size".to_owned()));
+                }
+                size
+            };
+            if self.bytes.len() == target && target >= 4 {
+                let kind = u16::from_le_bytes([self.bytes[2], self.bytes[3]]);
+                let size = u16::from_le_bytes([self.bytes[0], self.bytes[1]]) as usize;
+                if size == target {
+                    return decode_frame(kind, std::mem::take(&mut self.bytes)).map(Some);
+                }
+                continue;
+            }
+            let mut chunk = [0_u8; 4096];
+            let count = (target - self.bytes.len()).min(chunk.len());
+            let count = reader.read(&mut chunk[..count]).await?;
+            if count == 0 {
+                if self.bytes.is_empty() {
+                    return Ok(None);
+                }
+                return Err(
+                    io::Error::new(io::ErrorKind::UnexpectedEof, "truncated DTC frame").into(),
+                );
+            }
+            self.bytes.extend_from_slice(&chunk[..count]);
+        }
+    }
+}
+
+fn decode_frame(message_type: u16, mut bytes: Vec<u8>) -> Result<Frame, SessionError> {
+    // Only absent trailing fields are defaulted. Required prefixes must be
+    // present, and the wire Size is retained for diagnostics/versioning.
+    let layout = match message_type {
+        MARKET_DATA_REQUEST => Some((92, MARKET_DATA_REQUEST_SIZE)),
+        MARKET_DEPTH_REQUEST => Some((92, MARKET_DEPTH_REQUEST_SIZE)),
+        HISTORICAL_PRICE_DATA_REQUEST => Some((112, HISTORICAL_PRICE_DATA_REQUEST_SIZE)),
+        SUBMIT_NEW_SINGLE_ORDER => Some((188, SUBMIT_NEW_SINGLE_ORDER_SIZE)),
+        CANCEL_REPLACE_ORDER => Some((98, CANCEL_REPLACE_ORDER_SIZE)),
+        CANCEL_ORDER => Some((68, CANCEL_ORDER_SIZE)),
+        OPEN_ORDERS_REQUEST => Some((44, OPEN_ORDERS_REQUEST_SIZE)),
+        CURRENT_POSITIONS_REQUEST => Some((8, CURRENT_POSITIONS_REQUEST_SIZE)),
+        ACCOUNT_BALANCE_REQUEST => Some((8, ACCOUNT_BALANCE_REQUEST_SIZE)),
+        SYMBOLS_FOR_EXCHANGE_REQUEST => Some((28, SYMBOLS_FOR_EXCHANGE_REQUEST_SIZE)),
+        _ => None,
+    };
+    if let Some((minimum, current)) = layout {
+        if bytes.len() < minimum {
+            return Err(SessionError::Protocol(format!(
+                "message {message_type} requires {minimum} bytes, received {}",
+                bytes.len()
+            )));
+        }
+        let received = bytes.len();
+        bytes.resize(current.max(received), 0);
+        // A partially present field is absent, not a little-endian integer
+        // whose missing high bytes happen to be zero.
+        let tail_fields: &[(usize, usize)] = match message_type {
+            MARKET_DATA_REQUEST | MARKET_DEPTH_REQUEST => &[(92, 4)],
+            HISTORICAL_PRICE_DATA_REQUEST => &[(112, 4), (118, 2)],
+            SUBMIT_NEW_SINGLE_ORDER => &[
+                (192, 8),
+                (202, 48),
+                (252, 4),
+                (256, 8),
+                (264, 16),
+                (280, 16),
+                (296, 8),
+            ],
+            CANCEL_REPLACE_ORDER => &[
+                (100, 4),
+                (104, 4),
+                (112, 8),
+                (121, 32),
+                (153, 16),
+                (169, 16),
+            ],
+            CANCEL_ORDER => &[(68, 32)],
+            OPEN_ORDERS_REQUEST => &[(44, 32)],
+            CURRENT_POSITIONS_REQUEST | ACCOUNT_BALANCE_REQUEST => &[(8, 32)],
+            SYMBOLS_FOR_EXCHANGE_REQUEST => &[(28, 4), (32, 64)],
+            _ => &[],
+        };
+        for &(offset, size) in tail_fields {
+            if received < offset + size {
+                bytes[offset..offset + size].fill(0);
+            }
+        }
+        if message_type == SYMBOLS_FOR_EXCHANGE_REQUEST && received < 32 {
+            put_i32(&mut bytes, 28, SUBSCRIBE);
+        }
+    }
+    Ok(Frame {
         message_type,
         bytes,
-    }))
+    })
 }
 
 fn validate_encoding_request(bytes: &[u8]) -> Result<(), SessionError> {
@@ -1473,6 +1409,46 @@ async fn handle_trading_request(
     commands: Option<&mpsc::Sender<TradingCommand>>,
 ) -> Result<Vec<Vec<u8>>, SessionError> {
     let Some(commands) = commands else {
+        let reason = "Paper trading service is disabled";
+        if message_type == TRADE_ACCOUNTS_REQUEST {
+            require_size(bytes, TRADE_ACCOUNTS_REQUEST_SIZE, "TRADE_ACCOUNTS_REQUEST")?;
+            return Ok(vec![empty_trade_accounts(read_i32(bytes, 4))]);
+        }
+        if message_type == SUBMIT_NEW_SINGLE_ORDER {
+            require_size(
+                bytes,
+                SUBMIT_NEW_SINGLE_ORDER_SIZE,
+                "SUBMIT_NEW_SINGLE_ORDER",
+            )?;
+            return Ok(vec![new_order_rejection(&parse_new_order(bytes)?, reason)]);
+        }
+        if matches!(message_type, CANCEL_ORDER | CANCEL_REPLACE_ORDER) {
+            require_size(
+                bytes,
+                if message_type == CANCEL_ORDER {
+                    CANCEL_ORDER_SIZE
+                } else {
+                    CANCEL_REPLACE_ORDER_SIZE
+                },
+                "order action",
+            )?;
+            let account = if message_type == CANCEL_ORDER {
+                &bytes[68..100]
+            } else {
+                &bytes[121..153]
+            };
+            return Ok(vec![
+                reject_order_action(
+                    None,
+                    &read_fixed_string(&bytes[4..36])?,
+                    &read_fixed_string(&bytes[36..68])?,
+                    &read_fixed_string(account)?,
+                    if message_type == CANCEL_ORDER { 9 } else { 10 },
+                    reason,
+                )
+                .await,
+            ]);
+        }
         let request_id = if bytes.len() >= 8 {
             read_i32(bytes, 4)
         } else {
@@ -1494,6 +1470,7 @@ async fn handle_trading_request(
                 .await
                 .map_err(|_| trading_stopped())?;
             match rx.await.map_err(|_| trading_stopped())? {
+                Ok(accounts) if accounts.is_empty() => Ok(vec![empty_trade_accounts(request_id)]),
                 Ok(accounts) => Ok(accounts
                     .iter()
                     .enumerate()
@@ -1501,11 +1478,10 @@ async fn handle_trading_request(
                         trade_account_response(request_id, account, index, accounts.len())
                     })
                     .collect()),
-                Err(error) => Ok(vec![trading_reject(
-                    ACCOUNT_BALANCE_REJECT,
-                    request_id,
-                    &error,
-                )]),
+                Err(error) => Ok(vec![
+                    logoff_message(&format!("Trade account discovery failed: {error}"), false)
+                        .to_vec(),
+                ]),
             }
         }
         OPEN_ORDERS_REQUEST => {
@@ -1625,6 +1601,12 @@ async fn handle_trading_request(
                 "SUBMIT_NEW_SINGLE_ORDER",
             )?;
             let mut request = parse_new_order(bytes)?;
+            if bytes[201] != 0 {
+                return Ok(vec![new_order_rejection(
+                    &request,
+                    "Bracket parent orders are not supported; submit a standalone order",
+                )]);
+            }
             let resolved = if instrument.matches(&request.symbol, &request.exchange) {
                 Ok(instrument.clone())
             } else if let Some(catalog) = catalog {
@@ -1641,19 +1623,23 @@ async fn handle_trading_request(
             let resolved = match resolved {
                 Ok(resolved) => resolved,
                 Err(error) => {
-                    return Ok(vec![order_rejection(
-                        &request.client_order_id,
-                        &request.account_id,
+                    return Ok(vec![new_order_rejection(
+                        &request,
                         &format!("Unsupported symbol: {error}"),
                     )]);
                 }
             };
+            if resolved.min_price_increment != 0.25 {
+                return Ok(vec![new_order_rejection(
+                    &request,
+                    "Paper trading is limited to contracts with a verified 0.25 tick size",
+                )]);
+            }
             // Sierra can send the combined display symbol (for example NQU6-CME) with
             // an empty Exchange. Always pass Rithmic the canonical pair from reference data.
             request.symbol = resolved.symbol;
             request.exchange = resolved.exchange;
-            let client_id = request.client_order_id.clone();
-            let account_id = request.account_id.clone();
+            let rejected_request = request.clone();
             let (tx, rx) = oneshot::channel();
             commands
                 .send(TradingCommand::Submit(request, tx))
@@ -1661,7 +1647,7 @@ async fn handle_trading_request(
                 .map_err(|_| trading_stopped())?;
             match rx.await.map_err(|_| trading_stopped())? {
                 Ok(()) => Ok(Vec::new()),
-                Err(error) => Ok(vec![order_rejection(&client_id, &account_id, &error)]),
+                Err(error) => Ok(vec![new_order_rejection(&rejected_request, &error)]),
             }
         }
         CANCEL_REPLACE_ORDER => {
@@ -1677,13 +1663,17 @@ async fn handle_trading_request(
                 .map_err(|_| trading_stopped())?;
             match rx.await.map_err(|_| trading_stopped())? {
                 Ok(()) => Ok(Vec::new()),
-                Err(error) => Ok(vec![order_action_rejection(
-                    &server_id,
-                    &client_id,
-                    &account_id,
-                    10,
-                    &error,
-                )]),
+                Err(error) => Ok(vec![
+                    reject_order_action(
+                        Some(commands),
+                        &server_id,
+                        &client_id,
+                        &account_id,
+                        10,
+                        &error,
+                    )
+                    .await,
+                ]),
             }
         }
         CANCEL_ORDER => {
@@ -1703,13 +1693,17 @@ async fn handle_trading_request(
                 .map_err(|_| trading_stopped())?;
             match rx.await.map_err(|_| trading_stopped())? {
                 Ok(()) => Ok(Vec::new()),
-                Err(error) => Ok(vec![order_action_rejection(
-                    &server_id,
-                    &client_id,
-                    &account_id,
-                    9,
-                    &error,
-                )]),
+                Err(error) => Ok(vec![
+                    reject_order_action(
+                        Some(commands),
+                        &server_id,
+                        &client_id,
+                        &account_id,
+                        9,
+                        &error,
+                    )
+                    .await,
+                ]),
             }
         }
         _ => Ok(Vec::new()),
@@ -1773,64 +1767,63 @@ async fn handle_market_data_request(
     instrument: &Instrument,
     commands: Option<&mpsc::Sender<MarketCommand>>,
 ) -> Result<Option<Vec<u8>>, SessionError> {
-    if bytes.len() < MARKET_DATA_REQUEST_SIZE {
-        return Err(SessionError::Protocol(format!(
-            "MARKET_DATA_REQUEST is {} bytes; expected at least {MARKET_DATA_REQUEST_SIZE}",
-            bytes.len()
-        )));
-    }
+    require_size(bytes, MARKET_DATA_REQUEST_SIZE, "MARKET_DATA_REQUEST")?;
     let action = read_i32(bytes, 4);
     let symbol_id = read_u32(bytes, 8);
-    let symbol = read_fixed_string(&bytes[12..76])?;
-    let exchange = read_fixed_string(&bytes[76..92])?;
-
     let Some(commands) = commands else {
         return Ok(Some(market_data_reject(
             symbol_id,
             "Rithmic market data is unavailable",
         )));
     };
-
-    let (response, result) = oneshot::channel();
-    let command = match action {
-        SUBSCRIBE => {
-            let resolved = match resolve_requested_instrument(
-                instrument, commands, &symbol, &exchange,
-            )
-            .await
-            {
-                Ok(resolved) => resolved,
-                Err(error) => return Ok(Some(market_data_reject(symbol_id, &error))),
-            };
-            MarketCommand::Subscribe {
+    if action == UNSUBSCRIBE {
+        let (response, result) = oneshot::channel();
+        commands
+            .send(MarketCommand::Unsubscribe {
                 symbol_id,
-                symbol: resolved.symbol,
-                exchange: resolved.exchange,
                 response,
-            }
-        }
-        UNSUBSCRIBE => MarketCommand::Unsubscribe {
-            symbol_id,
+            })
+            .await
+            .map_err(|_| SessionError::Protocol("Market worker stopped".to_owned()))?;
+        return match result.await {
+            Ok(Ok(())) => Ok(None),
+            Ok(Err(error)) => Ok(Some(market_data_reject(symbol_id, &error))),
+            Err(_) => Err(SessionError::Protocol("Market response dropped".to_owned())),
+        };
+    }
+    if !matches!(action, SUBSCRIBE | SNAPSHOT) {
+        return Ok(Some(market_data_reject(symbol_id, "Unknown RequestAction")));
+    }
+    let symbol = read_fixed_string(&bytes[12..76])?;
+    let exchange = read_fixed_string(&bytes[76..92])?;
+    let resolved =
+        match resolve_requested_instrument(instrument, commands, &symbol, &exchange).await {
+            Ok(item) => item,
+            Err(error) => return Ok(Some(market_data_reject(symbol_id, &error))),
+        };
+    let (response, result) = oneshot::channel();
+    let command = if action == SNAPSHOT {
+        MarketCommand::Snapshot {
+            symbol: resolved.symbol,
+            exchange: resolved.exchange,
             response,
-        },
-        _ => {
-            return Ok(Some(market_data_reject(
-                symbol_id,
-                "Only SUBSCRIBE and UNSUBSCRIBE are supported",
-            )));
+        }
+    } else {
+        MarketCommand::Subscribe {
+            symbol_id,
+            symbol: resolved.symbol,
+            exchange: resolved.exchange,
+            response,
         }
     };
     commands
         .send(command)
         .await
-        .map_err(|_| SessionError::Protocol("Rithmic market-data worker stopped".to_owned()))?;
+        .map_err(|_| SessionError::Protocol("Market worker stopped".to_owned()))?;
     match result.await {
-        Ok(Ok(())) if action == SUBSCRIBE => Ok(Some(empty_market_data_snapshot(symbol_id))),
-        Ok(Ok(())) => Ok(None),
+        Ok(Ok(snapshot)) => Ok(Some(market_data_snapshot(symbol_id, &snapshot))),
         Ok(Err(error)) => Ok(Some(market_data_reject(symbol_id, &error))),
-        Err(_) => Err(SessionError::Protocol(
-            "Rithmic market-data worker dropped its response".to_owned(),
-        )),
+        Err(_) => Err(SessionError::Protocol("Market response dropped".to_owned())),
     }
 }
 
@@ -1867,7 +1860,7 @@ async fn handle_market_depth_request(
     };
 
     match action {
-        SUBSCRIBE => {
+        SUBSCRIBE | SNAPSHOT => {
             let resolved = match resolve_requested_instrument(
                 instrument, commands, &symbol, &exchange,
             )
@@ -1877,19 +1870,27 @@ async fn handle_market_depth_request(
                 Err(error) => return Ok(vec![market_depth_reject(symbol_id, &error)]),
             };
             let (response, result) = oneshot::channel();
-            commands
-                .send(MarketCommand::SubscribeDepth {
+            let command = if action == SNAPSHOT {
+                MarketCommand::DepthSnapshot {
+                    symbol: resolved.symbol,
+                    exchange: resolved.exchange,
+                    tick_size: f64::from(resolved.min_price_increment),
+                    max_levels,
+                    response,
+                }
+            } else {
+                MarketCommand::SubscribeDepth {
                     symbol_id,
                     symbol: resolved.symbol,
                     exchange: resolved.exchange,
                     tick_size: f64::from(resolved.min_price_increment),
                     max_levels,
                     response,
-                })
-                .await
-                .map_err(|_| {
-                    SessionError::Protocol("Rithmic market-depth worker stopped".to_owned())
-                })?;
+                }
+            };
+            commands.send(command).await.map_err(|_| {
+                SessionError::Protocol("Rithmic market-depth worker stopped".to_owned())
+            })?;
             match result.await {
                 Ok(Ok(levels)) => {
                     println!(
@@ -1929,7 +1930,7 @@ async fn handle_market_depth_request(
         }
         _ => Ok(vec![market_depth_reject(
             symbol_id,
-            "Only SUBSCRIBE and UNSUBSCRIBE are supported",
+            "Unknown RequestAction",
         )]),
     }
 }
@@ -2016,11 +2017,24 @@ async fn handle_symbol_discovery_request(
                     "Only SUBSCRIBE and UNSUBSCRIBE are supported",
                 )]);
             }
-            let matches = request_action == SUBSCRIBE
-                && exchange_matches(instrument, &exchange)
-                && futures_type_matches(security_type)
-                && (symbol.is_empty() || instrument.matches(&symbol, &exchange));
-            Ok(vec![definition_or_empty(request_id, instrument, matches)])
+            if request_action == UNSUBSCRIBE || !futures_type_matches(security_type) {
+                return Ok(vec![empty_security_definition_response(request_id)]);
+            }
+            let instruments = if !symbol.is_empty() {
+                if instrument.matches(&symbol, &exchange) {
+                    Ok(vec![instrument.clone()])
+                } else {
+                    catalog_resolve(catalog, &symbol, &exchange)
+                        .await
+                        .map(|item| vec![item])
+                }
+            } else {
+                catalog_enumerate(catalog, instrument, &exchange, "", false).await
+            };
+            Ok(match instruments {
+                Ok(items) => security_definition_responses(request_id, &items),
+                Err(error) => vec![security_definition_reject(request_id, &error)],
+            })
         }
         UNDERLYING_SYMBOLS_FOR_EXCHANGE_REQUEST => {
             require_size(
@@ -2030,13 +2044,22 @@ async fn handle_symbol_discovery_request(
             let request_id = read_i32(bytes, 4);
             let exchange = read_fixed_string(&bytes[8..24])?;
             let security_type = read_i32(bytes, 24);
-            let matches =
-                exchange_matches(instrument, &exchange) && futures_type_matches(security_type);
-            Ok(vec![if matches {
-                underlying_security_definition_response(request_id, instrument)
-            } else {
-                empty_security_definition_response(request_id)
-            }])
+            if !futures_type_matches(security_type) {
+                return Ok(vec![empty_security_definition_response(request_id)]);
+            }
+            Ok(
+                match catalog_enumerate(catalog, instrument, &exchange, "", true).await {
+                    Ok(mut items) => {
+                        for item in &mut items {
+                            item.symbol.clear();
+                            item.exchange_symbol.clear();
+                            item.expiration_date = 0;
+                        }
+                        security_definition_responses(request_id, &items)
+                    }
+                    Err(error) => vec![security_definition_reject(request_id, &error)],
+                },
+            )
         }
         SYMBOLS_FOR_UNDERLYING_REQUEST => {
             require_size(
@@ -2047,11 +2070,15 @@ async fn handle_symbol_discovery_request(
             let underlying = read_fixed_string(&bytes[8..40])?;
             let exchange = read_fixed_string(&bytes[40..56])?;
             let security_type = read_i32(bytes, 56);
-            let matches = (underlying.is_empty()
-                || underlying.eq_ignore_ascii_case(&instrument.underlying_symbol))
-                && exchange_matches(instrument, &exchange)
-                && futures_type_matches(security_type);
-            Ok(vec![definition_or_empty(request_id, instrument, matches)])
+            if !futures_type_matches(security_type) {
+                return Ok(vec![empty_security_definition_response(request_id)]);
+            }
+            Ok(
+                match catalog_enumerate(catalog, instrument, &exchange, &underlying, false).await {
+                    Ok(items) => security_definition_responses(request_id, &items),
+                    Err(error) => vec![security_definition_reject(request_id, &error)],
+                },
+            )
         }
         SECURITY_DEFINITION_FOR_SYMBOL_REQUEST => {
             require_size(
@@ -2088,9 +2115,23 @@ async fn handle_symbol_discovery_request(
             if !futures_type_matches(security_type) {
                 return Ok(vec![empty_security_definition_response(request_id)]);
             }
-            let mut instruments = catalog_search(catalog, &search_text, &exchange)
-                .await
-                .unwrap_or_default();
+            if !(0..=2).contains(&search_type) {
+                return Ok(vec![security_definition_reject(
+                    request_id,
+                    "Unknown SearchType",
+                )]);
+            }
+            let mut instruments = if catalog.is_some() {
+                match catalog_search(catalog, &search_text, &exchange, search_type).await {
+                    Ok(items) => items,
+                    Err(error) => return Ok(vec![security_definition_reject(request_id, &error)]),
+                }
+            } else {
+                Vec::new()
+            };
+            instruments.retain(|item| {
+                exchange_matches(item, &exchange) && search_matches(item, &search_text, search_type)
+            });
             if instruments.is_empty()
                 && exchange_matches(instrument, &exchange)
                 && search_matches(instrument, &search_text, search_type)
@@ -2169,6 +2210,7 @@ async fn catalog_search(
     catalog: Option<&mpsc::Sender<MarketCommand>>,
     search_text: &str,
     exchange: &str,
+    search_type: i32,
 ) -> Result<Vec<Instrument>, String> {
     let Some(catalog) = catalog else {
         return Err("Rithmic catalog is unavailable".to_owned());
@@ -2178,6 +2220,7 @@ async fn catalog_search(
         .send(MarketCommand::SearchCatalog {
             search_text: search_text.to_owned(),
             exchange: exchange.to_owned(),
+            search_type,
             response,
         })
         .await
@@ -2298,27 +2341,63 @@ fn add_security_definition_to_catalog(
     true
 }
 
-fn definition_or_empty(request_id: i32, instrument: &Instrument, matches: bool) -> Vec<u8> {
-    if matches {
-        security_definition_response(request_id, instrument)
-    } else {
-        empty_security_definition_response(request_id)
-    }
-}
-
 fn empty_security_definition_response(request_id: i32) -> Vec<u8> {
     let mut message = vec![0_u8; SECURITY_DEFINITION_RESPONSE_SIZE];
     put_u16(&mut message, 0, SECURITY_DEFINITION_RESPONSE_SIZE as u16);
     put_u16(&mut message, 2, SECURITY_DEFINITION_RESPONSE);
     put_i32(&mut message, 4, request_id);
+    put_i32(&mut message, 160, -1);
+    for offset in [172, 176, 256] {
+        put_f32(&mut message, offset, 1.0);
+    }
+    message[252] = 1; // official default, not a declaration for a specific symbol
     message[168] = 1; // IsFinalMessage
     message
 }
 
-fn underlying_security_definition_response(request_id: i32, instrument: &Instrument) -> Vec<u8> {
-    let mut message = security_definition_response(request_id, instrument);
-    message[8..72].fill(0); // Symbol must be empty for an underlying-symbol response.
-    message
+async fn catalog_enumerate(
+    catalog: Option<&mpsc::Sender<MarketCommand>>,
+    fallback: &Instrument,
+    exchange: &str,
+    underlying: &str,
+    roots_only: bool,
+) -> Result<Vec<Instrument>, String> {
+    let Some(catalog) = catalog else {
+        return Ok(
+            if exchange_matches(fallback, exchange)
+                && (underlying.is_empty()
+                    || underlying.eq_ignore_ascii_case(&fallback.underlying_symbol))
+            {
+                let mut item = fallback.clone();
+                if roots_only {
+                    item.symbol.clear();
+                    item.exchange_symbol.clear();
+                    item.expiration_date = 0;
+                    item.min_price_increment = 0.0;
+                    item.price_display_format = -1;
+                    item.currency_value_per_increment = 0.0;
+                    item.contract_size = 0.0;
+                    item.currency.clear();
+                }
+                vec![item]
+            } else {
+                Vec::new()
+            },
+        );
+    };
+    let (response, result) = oneshot::channel();
+    catalog
+        .send(MarketCommand::EnumerateCatalog {
+            exchange: exchange.to_owned(),
+            underlying: underlying.to_owned(),
+            roots_only,
+            response,
+        })
+        .await
+        .map_err(|_| "Catalog worker stopped".to_owned())?;
+    result
+        .await
+        .map_err(|_| "Catalog response dropped".to_owned())?
 }
 
 fn security_definition_response(request_id: i32, instrument: &Instrument) -> Vec<u8> {
@@ -2337,10 +2416,18 @@ fn security_definition_response(request_id: i32, instrument: &Instrument) -> Vec
     put_f32(&mut message, 172, 1.0); // FloatToIntPriceMultiplier
     put_f32(&mut message, 176, 1.0); // IntToFloatPriceDivisor
     put_fixed_string(&mut message[180..212], &instrument.underlying_symbol);
+    put_u32(&mut message, 228, instrument.expiration_date);
     put_f32(&mut message, 248, 1.0); // IntToFloatQuantityDivisor
     message[252] = 1; // HasMarketDepthData
     put_f32(&mut message, 256, 1.0); // DisplayPriceMultiplier
-    put_fixed_string(&mut message[260..324], &instrument.symbol);
+    put_fixed_string(
+        &mut message[260..324],
+        if instrument.exchange_symbol.is_empty() {
+            &instrument.symbol
+        } else {
+            &instrument.exchange_symbol
+        },
+    );
     put_fixed_string(&mut message[332..340], &instrument.currency);
     put_f32(&mut message, 340, instrument.contract_size);
     put_fixed_string(&mut message[368..432], &instrument.underlying_symbol);
@@ -2439,8 +2526,52 @@ fn empty_market_data_snapshot(symbol_id: u32) -> Vec<u8> {
     message
 }
 
+fn market_data_snapshot(symbol_id: u32, snapshot: &MarketSnapshot) -> Vec<u8> {
+    let mut message = empty_market_data_snapshot(symbol_id);
+    for (offset, value) in [
+        (8, snapshot.settlement),
+        (16, snapshot.open),
+        (24, snapshot.high),
+        (32, snapshot.low),
+        (40, snapshot.volume),
+        (56, snapshot.bid),
+        (64, snapshot.ask),
+        (72, snapshot.ask_size),
+        (80, snapshot.bid_size),
+        (88, snapshot.last),
+        (96, snapshot.last_size),
+    ] {
+        put_f64(&mut message, offset, value.unwrap_or(f64::MAX));
+    }
+    put_u32(&mut message, 52, snapshot.open_interest.unwrap_or(u32::MAX));
+    put_f64(
+        &mut message,
+        104,
+        snapshot.last_time_us as f64 / 1_000_000.0,
+    );
+    put_f64(
+        &mut message,
+        112,
+        snapshot.quote_time_us as f64 / 1_000_000.0,
+    );
+    put_u32(&mut message, 120, snapshot.settlement_date);
+    message
+}
+
 fn encode_market_event(event: MarketEvent) -> Vec<u8> {
     match event {
+        MarketEvent::Snapshot {
+            symbol_id,
+            snapshot,
+        } => market_data_snapshot(symbol_id, &snapshot),
+        MarketEvent::SessionVolume { symbol_id, volume } => {
+            let mut message = vec![0; 24];
+            put_u16(&mut message, 0, 24);
+            put_u16(&mut message, 2, MARKET_DATA_UPDATE_SESSION_VOLUME);
+            put_u32(&mut message, 4, symbol_id);
+            put_f64(&mut message, 8, volume);
+            message
+        }
         MarketEvent::FeedStatus { available } => {
             let mut message = vec![0_u8; MARKET_DATA_FEED_STATUS_SIZE];
             put_u16(&mut message, 0, MARKET_DATA_FEED_STATUS_SIZE as u16);
@@ -3046,6 +3177,8 @@ mod tests {
                     currency_value_per_increment: 5.0,
                     contract_size: 20.0,
                     currency: "USD".to_owned(),
+                    expiration_date: 0,
+                    exchange_symbol: String::new(),
                 }))
                 .unwrap();
         });
@@ -3543,7 +3676,7 @@ mod tests {
                         (symbol_id, symbol.as_str(), exchange.as_str()),
                         (9, "ESU6", "CME")
                     );
-                    response.send(Ok(())).unwrap();
+                    response.send(Ok(MarketSnapshot::default())).unwrap();
                     events_tx
                         .send(MarketEvent::LastTrade {
                             symbol_id,
@@ -3576,10 +3709,14 @@ mod tests {
                         .unwrap();
                 }
                 MarketCommand::LoadCatalog { .. }
+                | MarketCommand::DiscoverOptions { .. }
                 | MarketCommand::Unsubscribe { .. }
                 | MarketCommand::SubscribeDepth { .. }
                 | MarketCommand::UnsubscribeDepth { .. }
                 | MarketCommand::ListCatalogExchanges { .. }
+                | MarketCommand::EnumerateCatalog { .. }
+                | MarketCommand::Snapshot { .. }
+                | MarketCommand::DepthSnapshot { .. }
                 | MarketCommand::SearchCatalog { .. }
                 | MarketCommand::ResolveCatalogInstrument { .. } => panic!("unexpected command"),
             }

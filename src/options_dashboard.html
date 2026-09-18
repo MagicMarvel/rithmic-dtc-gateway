@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Rithmic Options Flow</title>
+  <style>
+    :root {
+      --bg: #06080d;
+      --panel: #0a0e15;
+      --panel-2: #0d121b;
+      --line: #202937;
+      --line-soft: #141b26;
+      --text: #edf4ff;
+      --muted: #778397;
+      --cyan: #26d9e8;
+      --green: #35e79a;
+      --orange: #ff9d3d;
+      --pink: #ed5cd7;
+      --red: #ff5876;
+      --blue: #4ba3ff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); overflow: hidden; }
+    button, select, input { font: inherit; }
+    button, select {
+      border: 1px solid var(--line); background: #0d121a; color: #cbd5e4;
+      border-radius: 7px; min-height: 34px; padding: 0 11px;
+    }
+    button { cursor: pointer; }
+    button:hover, select:hover { border-color: #3b4c64; color: #fff; }
+    button.active { border-color: #178895; background: #0b2428; color: var(--cyan); }
+    .app { height: 100%; display: grid; grid-template-rows: 52px 46px 1fr 26px; }
+    .topbar, .controls { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+    .topbar { padding: 0 18px; gap: 24px; background: #070a0f; }
+    .brand { font: 700 17px/1 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .04em; }
+    .brand i { color: var(--orange); font-style: normal; }
+    .nav { display: flex; align-self: stretch; gap: 24px; align-items: center; color: #8e99aa; font-size: 14px; }
+    .nav span:first-child { height: 100%; display: grid; place-items: center; color: #fff; border-bottom: 2px solid var(--orange); }
+    .top-meta { margin-left: auto; display: flex; align-items: center; gap: 16px; color: var(--muted); font-size: 13px; }
+    .top-meta a { color: #8491a5; text-decoration: none; }
+    .top-meta a:hover { color: #fff; }
+    .live { display: flex; gap: 7px; align-items: center; color: var(--green); }
+    .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 12px currentColor; }
+    .controls { padding: 6px 14px; gap: 8px; background: #090c12; }
+    .controls .symbol { display: flex; align-items: baseline; gap: 8px; margin-right: 16px; min-width: 140px; }
+    .symbol b { font: 700 19px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .symbol small { color: var(--muted); }
+    .segmented { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; }
+    .segmented button { border: 0; min-height: 26px; padding: 0 9px; background: transparent; }
+    .segmented button.active { background: #18303a; }
+    .controls .spacer { flex: 1; }
+    .regime-pill { border: 1px solid #284152; border-radius: 999px; padding: 6px 11px; color: #a8bed0; white-space: nowrap; }
+    .regime-pill.long { color: var(--green); border-color: #246b52; background: #0b251d; }
+    .regime-pill.short { color: var(--red); border-color: #743044; background: #2a1018; }
+    .workspace { min-height: 0; display: grid; grid-template-columns: 48px minmax(300px, 1fr) 6px var(--gamma-w, 280px) 6px var(--oi-w, 280px); }
+    .rail { border-right: 1px solid var(--line); background: #090c11; padding: 10px 7px; display: flex; flex-direction: column; gap: 9px; }
+    .rail button { width: 34px; min-height: 34px; padding: 0; display: grid; place-items: center; color: #8d99aa; }
+    .rail button.active { color: var(--cyan); box-shadow: inset 2px 0 var(--cyan); }
+    .splitter { width: 6px; background: #080b10; border-left: 1px solid var(--line); border-right: 1px solid var(--line); cursor: col-resize; position: relative; z-index: 10; user-select: none; transition: background 0.15s ease; }
+    .splitter:hover, .splitter.dragging { background: var(--cyan); border-color: var(--cyan); }
+    .splitter::after { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 2px; height: 24px; background: #2a374a; border-radius: 1px; }
+    .splitter:hover::after, .splitter.dragging::after { background: #090c12; }
+    .chart-panel { position: relative; min-width: 0; min-height: 0; border-right: 1px solid var(--line); background: var(--panel); }
+    .chart-head { position: absolute; z-index: 3; top: 12px; left: 15px; right: 15px; display: flex; align-items: center; gap: 12px; pointer-events: none; }
+    .chart-head .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 14px var(--orange); }
+    .chart-head h1 { margin: 0; font: 750 24px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .chart-head .price { font: 650 16px/1 ui-monospace, SFMono-Regular, Consolas, monospace; color: #fff; }
+    .chart-head .move { font: 600 13px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .chart-head .move.up { color: var(--green); }
+    .chart-head .move.down { color: var(--red); }
+    .zoom-controls { margin-left: auto; display: flex; gap: 4px; pointer-events: auto; }
+    .zoom-controls button { min-width: 30px; height: 27px; padding: 0 8px; font-size: 12px; background: #0c121bde; }
+    .zoom-controls #zoomReset, .zoom-controls #yZoomReset { min-width: 52px; color: var(--muted); }
+    canvas { display: block; width: 100%; height: 100%; }
+    #mainChart { cursor: grab; }
+    #mainChart:active { cursor: grabbing; }
+    .canvas-wrap { position: absolute; inset: 0; }
+    .tooltip { display: none; position: absolute; z-index: 4; pointer-events: none; background: #101722ee; border: 1px solid #39485e; border-radius: 7px; padding: 8px 10px; font: 12px/1.55 ui-monospace, monospace; box-shadow: 0 10px 35px #0009; }
+    .side-head { position: absolute; z-index: 2; top: 10px; left: 50%; transform: translateX(-50%); color: var(--cyan); border: 1px solid #145c6a; background: #071015; padding: 3px 10px; font: 700 12px/1 ui-monospace, monospace; letter-spacing: .08em; }
+    .metrics { position: absolute; z-index: 2; bottom: 12px; left: 12px; right: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none; }
+    .metric { border: 1px solid #222d3d; background: #090e16db; border-radius: 6px; padding: 7px 8px; }
+    .metric span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+    .metric b { font: 650 13px/1 ui-monospace, monospace; }
+    .replay-bar { display: none; position: absolute; z-index: 5; left: 20px; right: 20px; bottom: 20px; padding: 10px 12px; border: 1px solid #344157; border-radius: 9px; background: #0c111aec; align-items: center; gap: 10px; }
+    .replay-bar.visible { display: flex; }
+    .replay-bar input { flex: 1; accent-color: var(--cyan); }
+    .statusbar { display: flex; align-items: center; gap: 18px; border-top: 1px solid var(--line); color: #687487; padding: 0 12px; font: 12px/1 ui-monospace, monospace; background: #070a0e; }
+    .statusbar .ok { color: var(--green); }
+    .statusbar .right { margin-left: auto; }
+    .loading { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: #070a0fd9; color: #9da9ba; }
+    .loading.hidden { display: none; }
+    .workspace canvas { transition: filter .16s ease, opacity .16s ease; }
+    .workspace.switching canvas { filter: blur(5px); opacity: .42; }
+    .loading.interval-loading { background: #070a0f4d; color: #d8e4f4; font: 650 13px/1 ui-monospace, monospace; letter-spacing: .04em; }
+    .error { color: var(--red); }
+    @media (max-width: 1100px) {
+      .workspace { grid-template-columns: 42px minmax(300px, 1fr) 6px var(--gamma-w, 32%); }
+      #oiPanel, #splitterGammaOi { display: none; }
+      .nav { display: none; }
+    }
+    @media (max-width: 760px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100%; grid-template-rows: 50px auto auto 28px; }
+      .controls { flex-wrap: wrap; }
+      .controls .spacer { display: none; }
+      .workspace { grid-template-columns: 1fr; grid-template-rows: 64vh 420px 420px; }
+      .rail, .splitter { display: none; }
+      .chart-panel { border-bottom: 1px solid var(--line); border-right: 0; }
+      #oiPanel { display: block; }
+      .top-meta span:not(.live) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><i>λ</i> RITHMIC FLOW</div>
+      <nav class="nav" aria-label="主导航"><span>期权流</span><span>期权工作台</span><span>历史回放</span><span>数据说明</span></nav>
+      <div class="top-meta"><span class="live" id="liveState">LIVE</span><span id="clock">--:--:--</span><a href="/logout">退出</a></div>
+    </header>
+
+    <section class="controls" aria-label="图表控制">
+      <div class="symbol"><b id="symbol">ESU6</b><small>FUTURE OPTIONS</small></div>
+      <select id="market" aria-label="市场"><option value="ES">ES</option><option value="NQ">NQ</option><option value="GC">GC</option><option value="YM">YM</option></select>
+      <select id="expiry" aria-label="到期日"><option>载入中</option></select>
+      <div class="segmented" aria-label="K 线周期">
+        <button data-interval="60">1m</button><button data-interval="300" class="active">5m</button><button data-interval="900">15m</button><button data-interval="3600">1h</button>
+      </div>
+      <div class="segmented" aria-label="GEX 模型">
+        <button data-gex-mode="structural" class="active" title="基于 OI，Call 正、Put 负的结构代理">结构 GEX</button><button data-gex-mode="flow" title="根据主动成交推算做市商反向仓位">流量 GEX</button><button data-gex-mode="confidence" title="报价、成交分类和 OI 的综合数据质量">可信度</button>
+      </div>
+      <button id="replayBtn">↶ 回放</button>
+      <button id="refreshBtn">↻ 刷新</button>
+      <div class="spacer"></div>
+      <span class="regime-pill" id="regime">等待数据</span>
+    </section>
+
+    <section class="workspace switching" id="workspace">
+      <aside class="rail" aria-label="图层">
+        <button class="active" title="GEX 热力">Γ</button>
+        <button title="关键墙位">╫</button>
+        <button title="主动流">⇄</button>
+        <button title="隐含波动率">σ</button>
+        <button title="持仓分布">OI</button>
+      </aside>
+
+      <section class="chart-panel" id="mainPanel">
+        <div class="chart-head"><span class="dot"></span><h1 id="chartSymbol">ESU6</h1><span class="price" id="spot">—</span><span class="move" id="move"></span><div class="zoom-controls"><button id="yZoomOut" title="缩小纵轴">Y−</button><button id="yZoomReset" title="恢复完整行权价范围">纵轴复位</button><button id="yZoomIn" title="放大纵轴">Y+</button></div></div>
+        <div class="canvas-wrap"><canvas id="mainChart" aria-label="标的价格与 GEX 热力图"></canvas></div>
+        <div class="tooltip" id="tooltip"></div>
+        <div class="replay-bar" id="replayBar"><button id="playBtn">▶</button><input id="replaySlider" type="range" min="0" value="0"><span id="replayTime">—</span></div>
+        <div class="loading interval-loading" id="loading">正在加载 5m K 线数据…</div>
+      </section>
+
+      <div class="splitter" id="splitterMainGamma" title="拖动调整 Profile 宽度"></div>
+
+      <section class="chart-panel" id="gammaPanel">
+        <div class="side-head" id="profileTitle">结构 GEX</div>
+        <canvas id="gammaChart" aria-label="Gamma 行权价分布"></canvas>
+        <div class="metrics">
+          <div class="metric"><span id="netGexLabel">NET GEX</span><b id="netGex">—</b></div>
+          <div class="metric"><span id="zeroGammaLabel">ZERO Γ</span><b id="zeroGamma">—</b></div>
+          <div class="metric"><span id="callWallLabel">CALL WALL</span><b id="callWall">—</b></div>
+          <div class="metric"><span id="putWallLabel">PUT WALL</span><b id="putWall">—</b></div>
+        </div>
+      </section>
+
+      <div class="splitter" id="splitterGammaOi" title="拖动调整 Profile 与 OI 宽度"></div>
+
+      <section class="chart-panel" id="oiPanel">
+        <div class="side-head">GEX · OI</div>
+        <canvas id="oiChart" aria-label="Call 与 Put 未平仓量分布"></canvas>
+        <div class="metrics">
+          <div class="metric"><span>CALL 主动买/卖</span><b id="callFlow">—</b></div>
+          <div class="metric"><span>PUT 主动买/卖</span><b id="putFlow">—</b></div>
+          <div class="metric"><span>HVL</span><b id="hvl">—</b></div>
+          <div class="metric"><span>CONTRACTS</span><b id="contracts">—</b></div>
+        </div>
+      </section>
+    </section>
+
+    <footer class="statusbar"><span class="ok" id="feedStatus">● Rithmic connected</span><span id="asOf">等待首个快照</span><span id="model">Black-76</span><span class="right">OI = 交易所最新公布值 · Flow = aggressor 分类</span></footer>
+  </main>
+
+  <script>
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const ui = Object.fromEntries(['symbol','chartSymbol','spot','move','market','expiry','regime','loading','liveState','clock','profileTitle','netGexLabel','zeroGammaLabel','callWallLabel','putWallLabel','netGex','zeroGamma','callWall','putWall','callFlow','putFlow','hvl','contracts','feedStatus','asOf','model','replayBtn','refreshBtn','replayBar','replaySlider','replayTime','playBtn','tooltip'].map(id => [id, $(id)]));
+    const heatCanvas = document.createElement('canvas');
+    const colors = { bg:'#0a0e15', grid:'#1a2230', text:'#8b97a9', cyan:'#26d9e8', green:'#35e79a', orange:'#ff9d3d', pink:'#ed5cd7', red:'#ff5876', white:'#edf4ff' };
+    const state = { market: 'ES', history: [], heatmap: [], bars: [], latest: null, interval: 300, gexMode: 'structural', switching: true, expiry: '', replay: false, cursor: 0, playing: false, timer: null, hover: null, zoom: 1, pan: 0, yZoom: 1, yCenter: null, dragging: null, gammaW: 280, oiW: 280 };
+    const compact = new Intl.NumberFormat('en', { notation:'compact', maximumFractionDigits:2 });
+    const number = (v, digits=2) => v == null || !Number.isFinite(v) ? '—' : Number(v).toLocaleString('en', { maximumFractionDigits:digits });
+    const short = v => v == null || !Number.isFinite(v) ? '—' : compact.format(v);
+    const timeLabel = us => new Date(us / 1000).toLocaleTimeString('zh-CN', { hour12:false });
+    const twoDigits = value => String(value).padStart(2,'0');
+    function axisTimeLabel(seconds) {
+      const date=new Date(seconds*1000),week=['周日','周一','周二','周三','周四','周五','周六'][date.getDay()];
+      return {
+        date:`${date.getFullYear()}-${twoDigits(date.getMonth()+1)}-${twoDigits(date.getDate())} ${week}`,
+        time:`${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`
+      };
+    }
+
+    function setupCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const w = Math.max(1, Math.round(rect.width));
+      const h = Math.max(1, Math.round(rect.height));
+      if (canvas.width !== w*dpr || canvas.height !== h*dpr) { canvas.width=w*dpr; canvas.height=h*dpr; }
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      return { ctx, w, h, dpr };
+    }
+
+    function setupHeatCanvas(w,h,dpr) {
+      const width=Math.max(1,Math.round(w*dpr)),height=Math.max(1,Math.round(h*dpr));
+      if(heatCanvas.width!==width||heatCanvas.height!==height){heatCanvas.width=width;heatCanvas.height=height}
+      const ctx=heatCanvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+      return ctx;
+    }
+
+    function activeHistory() {
+      if (!state.history.length) return [];
+      return state.replay ? state.history.slice(0, state.cursor + 1) : state.history;
+    }
+
+    function snapshot() { return state.replay ? state.history[state.cursor] : state.latest; }
+    function rowMetric(row) {
+      return state.gexMode==='flow' ? row.flow_gex : state.gexMode==='confidence' ? row.confidence : row.net_gex;
+    }
+    function snapshotMetric(snap) {
+      return state.gexMode==='flow' ? snap?.flow_gex : state.gexMode==='confidence' ? snap?.confidence : snap?.net_gex;
+    }
+    function metricText(value) {
+      return state.gexMode==='confidence' ? (Number.isFinite(value)?number(value,0)+'%':'—') : short(value);
+    }
+    function expiryRows(snap) {
+      if (!snap) return [];
+      return snap.strikes.filter(x => !state.expiry || x.expiration === state.expiry).sort((a,b) => a.strike-b.strike);
+    }
+    function heatmapRows(point) {
+      if (!point?.expirations?.length) return [];
+      // With front-expiry mode, the contract date rolls every session. Prefer
+      // the selected expiry when it existed, otherwise use that frame's front
+      // expiry so historical 0DTE structure remains continuous and truthful.
+      return (point.expirations.find(x=>x.expiration===state.expiry)||point.expirations[0])?.strikes||[];
+    }
+    function compactHeatmapPoint(snap) {
+      if(!snap||!Number.isFinite(snap.as_of_us)||!Number.isFinite(snap.underlying_price)||!snap.strikes?.length)return null;
+      const expirations=new Map();
+      snap.strikes.forEach(row=>{
+        if(!expirations.has(row.expiration))expirations.set(row.expiration,[]);
+        expirations.get(row.expiration).push({strike:row.strike,net_gex:row.net_gex,flow_gex:row.flow_gex,confidence:row.confidence});
+      });
+      return {as_of_us:snap.as_of_us,underlying_price:snap.underlying_price,call_wall:snap.call_wall,put_wall:snap.put_wall,flow_call_wall:snap.flow_call_wall,flow_put_wall:snap.flow_put_wall,expirations:[...expirations].map(([expiration,strikes])=>({expiration,strikes}))};
+    }
+    function upsertHeatmapSnapshot(snap) {
+      const point=compactHeatmapPoint(snap);if(!point)return;
+      const bucket=Math.floor(point.as_of_us/60000000),last=state.heatmap.at(-1);
+      if(last&&Math.floor(last.as_of_us/60000000)===bucket)state.heatmap[state.heatmap.length-1]=point;
+      else {state.heatmap.push(point);if(state.heatmap.length>2880)state.heatmap.shift()}
+    }
+    function yMap(price, min, max, top, bottom) { return top + (max-price)/(max-min || 1)*(bottom-top); }
+    function visibleDomain(history, rows, candles=[], transformY=false, includeOptions=true) {
+      const prices = history.map(x=>x.underlying_price).filter(Number.isFinite);
+      const snap = snapshot();
+      const spot = prices.at(-1) || snap?.underlying_price || rows[Math.floor(rows.length/2)]?.strike || 1;
+      const candlePrices = candles.flatMap(x=>[x.high,x.low]).filter(Number.isFinite);
+
+      const strikePrices = rows.map(r => r.strike).filter(Number.isFinite);
+      let allMinCandidates = [...candlePrices, ...prices, ...strikePrices];
+      let allMaxCandidates = [...candlePrices, ...prices, ...strikePrices];
+
+      if (snap && includeOptions) {
+        if (Number.isFinite(snap.call_wall)) { allMinCandidates.push(snap.call_wall); allMaxCandidates.push(snap.call_wall); }
+        if (Number.isFinite(snap.put_wall)) { allMinCandidates.push(snap.put_wall); allMaxCandidates.push(snap.put_wall); }
+        if (Number.isFinite(snap.zero_gamma)) { allMinCandidates.push(snap.zero_gamma); allMaxCandidates.push(snap.zero_gamma); }
+        if (Number.isFinite(snap.call_trigger)) { allMinCandidates.push(snap.call_trigger); allMaxCandidates.push(snap.call_trigger); }
+        if (Number.isFinite(snap.put_trigger)) { allMinCandidates.push(snap.put_trigger); allMaxCandidates.push(snap.put_trigger); }
+      }
+
+      let min = allMinCandidates.length ? Math.min(...allMinCandidates) : spot - 30;
+      let max = allMaxCandidates.length ? Math.max(...allMaxCandidates) : spot + 30;
+
+      const span = max - min || 10;
+      const pad = Math.max(span * 0.05, 3);
+      min -= pad; max += pad;
+      const baseMin = min, baseMax = max;
+
+      if(transformY&&(state.yZoom!==1||state.yCenter!=null)){
+        const currentSpan=(baseMax-baseMin)/state.yZoom, center=state.yCenter??(baseMin+baseMax)/2;
+        min=center-currentSpan/2; max=center+currentSpan/2;
+      }
+      return { min, max, baseMin, baseMax, rows };
+    }
+
+    function grid(ctx,w,h,min,max,left,right,top,bottom) {
+      ctx.strokeStyle=colors.grid; ctx.lineWidth=1; ctx.fillStyle=colors.text; ctx.font='12px ui-monospace,monospace';
+      for(let i=0;i<=8;i++) { const y=top+(bottom-top)*i/8; const p=max-(max-min)*i/8; ctx.beginPath(); ctx.moveTo(left,y+.5); ctx.lineTo(right,y+.5); ctx.stroke(); ctx.fillText(number(p,1), right+8, y+4); }
+    }
+    function sideGrid(ctx,domain,left,right,top,bottom) {
+      ctx.strokeStyle=colors.grid;ctx.fillStyle=colors.text;ctx.lineWidth=1;ctx.font='11px ui-monospace,monospace';
+      for(let i=0;i<=8;i++){const y=top+(bottom-top)*i/8,p=domain.max-(domain.max-domain.min)*i/8;ctx.beginPath();ctx.moveTo(left,y+.5);ctx.lineTo(right,y+.5);ctx.stroke();ctx.fillText(number(p,1),4,y+4)}
+    }
+
+    function importantLevels(snap) {
+      if(state.gexMode==='confidence')return [];
+      const flow=state.gexMode==='flow';
+      const raw=[
+        {level:flow?snap.flow_call_wall:snap.call_wall,label:flow?'CALL FLOW WALL':'CALL WALL',color:colors.cyan},
+        {level:flow?snap.flow_put_wall:snap.put_wall,label:flow?'PUT FLOW WALL':'PUT WALL',color:colors.pink},
+        {level:flow?snap.flow_zero_gamma:snap.zero_gamma,label:'ZERO Γ',color:colors.orange},
+        {level:flow?snap.flow_hvl:snap.hvl,label:flow?'FLOW HVL':'HVL',color:colors.green},
+        {level:flow?null:snap.call_trigger,label:'CALL TRIGGER',color:colors.cyan},
+        {level:flow?null:snap.put_trigger,label:'PUT TRIGGER',color:colors.pink}
+      ].filter(x=>Number.isFinite(x.level));
+      const grouped=[];
+      raw.forEach(item=>{
+        const match=grouped.find(x=>Math.abs(x.level-item.level)<1e-8);
+        if(match)match.labels.push(item.label);
+        else grouped.push({level:item.level,labels:[item.label],color:item.color});
+      });
+      return grouped;
+    }
+
+    function roundedRect(ctx,x,y,w,h,r) {
+      const radius=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+radius,y);ctx.arcTo(x+w,y,x+w,y+h,radius);ctx.arcTo(x+w,y+h,x,y+h,radius);ctx.arcTo(x,y+h,x,y,radius);ctx.arcTo(x,y,x+w,y,radius);ctx.closePath();
+    }
+
+    function drawLevel(ctx, item, domain, left, right, top, bottom, showTag=false) {
+      if (item.level < domain.min || item.level > domain.max) return;
+      const y=yMap(item.level,domain.min,domain.max,top,bottom),color=item.color;
+      ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.globalAlpha=.68;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(left,y+.5);ctx.lineTo(right,y+.5);ctx.stroke();ctx.setLineDash([]);
+      ctx.globalAlpha=1;ctx.shadowColor=color;ctx.shadowBlur=7;ctx.fillStyle=color;ctx.fillRect(right-2,y-2,4,4);ctx.shadowBlur=0;
+      if(showTag){
+        ctx.font='700 11px ui-monospace,monospace';const label=item.labels.join(' · '),price=number(item.level,1),txt=`${label}  ${price}`,tw=ctx.measureText(txt).width+18,th=22,x=Math.max(left,right+54-tw),ty=y-th/2;
+        roundedRect(ctx,x,ty,tw,th,4);ctx.fillStyle='#0b1119ee';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();
+        ctx.fillStyle=color;ctx.fillText(label,x+8,y+4);const pw=ctx.measureText(price).width;ctx.fillStyle=colors.white;ctx.fillText(price,x+tw-pw-8,y+4);
+      }
+      ctx.restore();
+    }
+
+    function candleInterval() { return state.interval; }
+
+    function buildCandles(history) {
+      const seconds=candleInterval(),historicalBuckets=new Map(),liveBuckets=new Map();
+      const mergeBar=(buckets,time,open,high,low,close,volume=0)=>{
+        const bucket=Math.floor(time/seconds)*seconds,bar=buckets.get(bucket);
+        if(bar){bar.high=Math.max(bar.high,high);bar.low=Math.min(bar.low,low);bar.close=close;bar.volume=(bar.volume||0)+(volume||0)}
+        else buckets.set(bucket,{time:bucket,open,high,low,close,volume:volume||0});
+      };
+      state.bars.forEach(bar=>mergeBar(historicalBuckets,bar.start_datetime_us/1e6,bar.open,bar.high,bar.low,bar.close,bar.volume));
+      history.forEach(point => {
+        const price = point.underlying_price;
+        if (!Number.isFinite(price)) return;
+        mergeBar(liveBuckets,point.as_of_us/1e6,price,price,price,price);
+      });
+      const live=[...liveBuckets.values()].sort((a,b)=>a.time-b.time);
+      if(!state.bars.length)return live;
+      const historical=[...historicalBuckets.values()].sort((a,b)=>a.time-b.time);
+      // Cached bars can stop before the live session when the account lacks
+      // historical-bar permission. Merge the live snapshot candles anyway;
+      // their real timestamps preserve the gap and keep heatmap alignment.
+      const merged=new Map(historical.map(x=>[x.time,{...x}]));
+      live.forEach(x=>mergeBar(merged,x.time,x.open,x.high,x.low,x.close,x.volume));
+      return [...merged.values()].sort((a,b)=>a.time-b.time);
+    }
+
+    function drawCandles(ctx, candles, domain, left, right, top, bottom, visibleCount, panOffset, barW) {
+      if(!candles.length)return;
+      const N = candles.length;
+      const width = Math.max(3, Math.min(14, barW * 0.64));
+      candles.forEach((bar, k) => {
+        const x = right - ((N - 1 - k) - panOffset) * barW;
+        if (x < left - width || x > right + width) return;
+        const yo=yMap(bar.open,domain.min,domain.max,top,bottom), yc=yMap(bar.close,domain.min,domain.max,top,bottom);
+        const yh=yMap(bar.high,domain.min,domain.max,top,bottom), yl=yMap(bar.low,domain.min,domain.max,top,bottom);
+        const up=bar.close>=bar.open, color=up?colors.green:colors.red;
+        ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=1.2; ctx.globalAlpha=.98;
+        ctx.beginPath();ctx.moveTo(x,yh);ctx.lineTo(x,yl);ctx.stroke();
+        const bodyTop=Math.min(yo,yc), bodyHeight=Math.max(3,Math.abs(yc-yo));
+        if(up){ctx.globalAlpha=.24;ctx.fillRect(x-width/2,bodyTop,width,bodyHeight);ctx.globalAlpha=1;ctx.strokeRect(x-width/2+.5,bodyTop+.5,width-1,Math.max(2,bodyHeight-1));}
+        else ctx.fillRect(x-width/2,bodyTop,width,bodyHeight);
+        ctx.restore();
+      });
+    }
+
+    function drawTimeAxis(ctx,candles,left,right,bottom,panOffset,barW) {
+      const visible=[];
+      candles.forEach((bar,k)=>{
+        const x=right-((candles.length-1-k)-panOffset)*barW;
+        if(x>=left&&x<=right)visible.push({bar,x});
+      });
+      if(!visible.length)return;
+      const labelCount=Math.min(visible.length,Math.max(2,Math.floor((right-left)/124)));
+      const selected=[];
+      for(let i=0;i<labelCount;i++){
+        const index=labelCount===1?0:Math.round(i*(visible.length-1)/(labelCount-1));
+        if(!selected.length||selected.at(-1)!==index)selected.push(index);
+      }
+      ctx.save();ctx.font='10px ui-monospace,monospace';ctx.textAlign='center';ctx.textBaseline='top';
+      selected.forEach(index=>{
+        const {bar,x}=visible[index],label=axisTimeLabel(bar.time);
+        ctx.strokeStyle='#334055';ctx.beginPath();ctx.moveTo(x,bottom+1);ctx.lineTo(x,bottom+6);ctx.stroke();
+        ctx.fillStyle='#a8b5c8';ctx.fillText(label.date,x,bottom+9);
+        ctx.fillStyle='#718097';ctx.fillText(label.time,x,bottom+23);
+      });
+      ctx.restore();
+    }
+
+    function drawWallTrajectory(ctx,frames,field,color,domain,top,bottom) {
+      if(state.gexMode==='confidence'||!frames.length)return;
+      const segments=[];let previous=null;
+      frames.forEach(frame=>{
+        const level=frame.point?.[field],time=frame.point?.as_of_us;
+        if(!Number.isFinite(level)||level<domain.min||level>domain.max){previous=null;return}
+        const current={x:frame.x,y:yMap(level,domain.min,domain.max,top,bottom),time};
+        if(previous&&time-previous.time<=150000000){segments.push([previous,current])}
+        previous=current;
+      });
+      if(!segments.length)return;
+      const stroke=(width,alpha,blur)=>{
+        ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.globalAlpha=alpha;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor=color;ctx.shadowBlur=blur;
+        segments.forEach(([from,to])=>{ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke()});ctx.restore();
+      };
+      stroke(5,.18,8);stroke(2,.86,4);
+    }
+
+    function drawMain() {
+      const canvas=$('mainChart'), {ctx,w,h,dpr}=setupCanvas(canvas); ctx.clearRect(0,0,w,h); ctx.fillStyle=colors.bg; ctx.fillRect(0,0,w,h);
+      const baseHistory=activeHistory(), snap=snapshot(); if(!snap||!baseHistory.length) return;
+      const allRows=expiryRows(snap), candles=buildCandles(baseHistory);
+      const rows=allRows,left=58,right=w-60,top=58,bottom=h-58;
+      const targetVisible=60;
+      const visibleCount=Math.max(2,targetVisible/state.zoom);
+      const maxStart=Math.max(0,candles.length-visibleCount);
+      const panBase=Math.max(1,maxStart),futureBars=Math.max(8,Math.ceil(visibleCount*.6)),minPan=-futureBars/panBase;
+      const panOffset=Math.max(-futureBars,Math.min(maxStart,state.pan*panBase));
+      const barW=(right-left)/Math.max(1,visibleCount-1);
+      const visCandles=candles.filter((_,k)=>{const x=right-((candles.length-1-k)-panOffset)*barW;return x>=left-5&&x<=right+5;});
+      // The price viewport follows only the currently visible candle highs/lows.
+      // Option strikes and walls may be outside the viewport and must not flatten
+      // the candles when entering the chart or switching time ranges.
+      const domain=visibleDomain([],[],visCandles,true,false);
+      grid(ctx,w,h,domain.min,domain.max,left,right,top,bottom);
+      // Place every heatmap frame into its real candle-time bucket. Never
+      // stretch a short replay buffer across older price history.
+      const candleByBucket=new Map(candles.map((bar,index)=>[bar.time,index]));
+      const replayCutoff=state.replay?snap.as_of_us:Infinity;
+      const visibleHeatmap=state.heatmap.map(point=>{
+        if(point.as_of_us>replayCutoff)return null;
+        const seconds=point.as_of_us/1e6,bucket=Math.floor(seconds/state.interval)*state.interval,index=candleByBucket.get(bucket);
+        if(index==null)return null;
+        const position=index+Math.max(0,Math.min(.999,(seconds-bucket)/state.interval));
+        const x=right-((candles.length-1-position)-panOffset)*barW;
+        if(x<left-2||x>right+2)return null;
+        return {point,x,rows:heatmapRows(point)};
+      }).filter(Boolean);
+      const visibleValues=visibleHeatmap.flatMap(frame=>frame.rows.map(row=>rowMetric(row)).filter(Number.isFinite));
+      const maxG=state.gexMode==='confidence'?100:Math.max(1,...visibleValues.map(Math.abs));
+      const nominalStep=rows.slice(1).map((row,index)=>row.strike-rows[index].strike).filter(step=>step>0).sort((a,b)=>a-b)[0]||5;
+      const cellH=Math.max(3,Math.min(14,nominalStep/(domain.max-domain.min||1)*(bottom-top)*.82));
+      const cellW=Math.max(1.25,barW*60/state.interval*1.28),heatCtx=setupHeatCanvas(w,h,dpr);
+      visibleHeatmap.forEach(({rows:frameRows,x})=>{
+        frameRows.forEach(row=>{
+          const value=rowMetric(row);if(row.strike<domain.min||row.strike>domain.max||!Number.isFinite(value))return;
+          const y=yMap(row.strike,domain.min,domain.max,top,bottom),power=Math.min(1,Math.abs(value)/maxG);
+          heatCtx.fillStyle=state.gexMode==='confidence'?colors.green:(value>=0?colors.cyan:colors.orange);
+          heatCtx.globalAlpha=.04+.72*Math.sqrt(power);
+          heatCtx.fillRect(x-cellW/2,y-cellH/2,cellW+.35,cellH);
+        });
+      });
+      heatCtx.globalAlpha=1;
+      // Smooth only the rendered heat layer. The underlying minute frames stay
+      // exact, and empty historical regions remain empty. A faint sharp pass
+      // preserves price-level definition after the Gaussian blur.
+      ctx.save();ctx.filter='blur(2.2px) saturate(1.08)';ctx.globalAlpha=.88;ctx.drawImage(heatCanvas,0,0,w,h);
+      ctx.filter='none';ctx.globalAlpha=.24;ctx.drawImage(heatCanvas,0,0,w,h);ctx.restore();
+      ctx.globalAlpha=1; ctx.shadowBlur=0;
+      const flowWalls=state.gexMode==='flow';
+      drawWallTrajectory(ctx,visibleHeatmap,flowWalls?'flow_call_wall':'call_wall',colors.cyan,domain,top,bottom);
+      drawWallTrajectory(ctx,visibleHeatmap,flowWalls?'flow_put_wall':'put_wall',colors.pink,domain,top,bottom);
+      drawCandles(ctx,candles,domain,left,right,top,bottom,visibleCount,panOffset,barW);
+      importantLevels(snap).forEach(item=>drawLevel(ctx,item,domain,left,right,top,bottom,true));
+      if(Number.isFinite(snap.underlying_price)){
+        const y=yMap(snap.underlying_price,domain.min,domain.max,top,bottom),price=number(snap.underlying_price,2),label='SPOT',color=colors.orange;
+        ctx.save();ctx.strokeStyle='#dce7f055';ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(left,y+.5);ctx.lineTo(right,y+.5);ctx.stroke();ctx.setLineDash([]);ctx.font='700 11px ui-monospace,monospace';
+        const txt=`${label}  ${price}`,tw=ctx.measureText(txt).width+18,th=22,x=Math.max(left,right+54-tw);roundedRect(ctx,x,y-th/2,tw,th,4);ctx.fillStyle='#0b1119ee';ctx.fill();ctx.strokeStyle=color;ctx.stroke();ctx.fillStyle=color;ctx.fillText(label,x+8,y+4);const pw=ctx.measureText(price).width;ctx.fillStyle=colors.white;ctx.fillText(price,x+tw-pw-8,y+4);ctx.shadowColor=color;ctx.shadowBlur=8;ctx.fillStyle=color;ctx.fillRect(right-2,y-2,4,4);ctx.restore();
+      }
+      drawTimeAxis(ctx,candles,left,right,bottom,panOffset,barW);
+      state.chart={history:baseHistory,candles,domain,left,right,top,bottom,w,h,visibleCount,panOffset,barW,minPan};
+    }
+
+    function drawProfile() {
+      const {ctx,w,h}=setupCanvas($('gammaChart'));ctx.clearRect(0,0,w,h);ctx.fillStyle=colors.bg;ctx.fillRect(0,0,w,h);const snap=snapshot(),rows=expiryRows(snap);if(!snap||!rows.length)return;
+      const domain=state.chart?.domain||visibleDomain(activeHistory(),rows),shown=rows.filter(r=>r.strike>=domain.min&&r.strike<=domain.max),top=58,bottom=h-58,left=40,right=w-18,center=(left+right)/2,max=state.gexMode==='confidence'?100:Math.max(1,...shown.map(x=>Math.abs(rowMetric(x)||0)));sideGrid(ctx,domain,left,right,top,bottom);ctx.strokeStyle='#334055';ctx.beginPath();ctx.moveTo(center,top);ctx.lineTo(center,bottom);ctx.stroke();
+      shown.forEach(r=>{const y=yMap(r.strike,domain.min,domain.max,top,bottom),v=rowMetric(r)||0,len=Math.abs(v)/max*(right-left)*.45;ctx.fillStyle=state.gexMode==='confidence'?colors.green:(v>=0?colors.cyan:colors.pink);ctx.globalAlpha=.82;ctx.fillRect(state.gexMode==='confidence'||v>=0?center:center-len,y-3,len,6);ctx.globalAlpha=1});
+      importantLevels(snap).forEach(item=>drawLevel(ctx,item,domain,left,right,top,bottom));
+    }
+
+    function drawOi() {
+      const {ctx,w,h}=setupCanvas($('oiChart'));ctx.clearRect(0,0,w,h);ctx.fillStyle=colors.bg;ctx.fillRect(0,0,w,h);const snap=snapshot(),rows=expiryRows(snap);if(!snap||!rows.length)return;
+      const domain=state.chart?.domain||visibleDomain(activeHistory(),rows),shown=rows.filter(r=>r.strike>=domain.min&&r.strike<=domain.max),top=58,bottom=h-58,left=40,right=w-14,center=(left+right)/2,max=Math.max(1,...shown.flatMap(x=>[x.call_oi,x.put_oi]));sideGrid(ctx,domain,left,right,top,bottom);ctx.strokeStyle='#334055';ctx.beginPath();ctx.moveTo(center,top);ctx.lineTo(center,bottom);ctx.stroke();
+      shown.forEach(r=>{const y=yMap(r.strike,domain.min,domain.max,top,bottom),cl=r.call_oi/max*(right-left)*.43,pl=r.put_oi/max*(right-left)*.43;ctx.fillStyle=colors.cyan;ctx.globalAlpha=.78;ctx.fillRect(center-cl,y-3,cl,6);ctx.fillStyle=colors.orange;ctx.fillRect(center,y-3,pl,6);ctx.globalAlpha=1});
+      importantLevels(snap).forEach(item=>drawLevel(ctx,item,domain,left,right,top,bottom));
+    }
+
+    function updateUi() {
+      const snap=snapshot(); if(!snap)return; const history=activeHistory(), first=history[0]?.underlying_price;
+      ui.symbol.textContent=ui.chartSymbol.textContent=snap.underlying;ui.spot.textContent=number(snap.underlying_price,2);
+      if(Number.isFinite(first)&&Number.isFinite(snap.underlying_price)){const d=snap.underlying_price-first;ui.move.textContent=(d>=0?'+':'')+number(d,2);ui.move.className='move '+(d>=0?'up':'down')}
+      const flow=state.gexMode==='flow',confidence=state.gexMode==='confidence',metric=snapshotMetric(snap);
+      const momentumOverride=!confidence&&state.gexMode==='structural'&&snap.playbook?.includes('continuation')&&Math.abs(snap.momentum_5m||0)>=5;
+      ui.regime.textContent=confidence?`数据可信度 ${metricText(metric)}`:momentumOverride?`${snap.momentum_5m>0?'↑':'↓'} 强动量 ${number(snap.momentum_5m,1)} · 突破延续`:Number.isFinite(metric)?(metric>=0?'正 Gamma · 均值回归':'负 Gamma · 趋势延续'):'等待期权报价';ui.regime.className='regime-pill '+(confidence||!Number.isFinite(metric)?'':momentumOverride||metric<0?'short':'long');
+      ui.profileTitle.textContent=confidence?'可信度 PROFILE':flow?'流量 GEX':'结构 GEX';ui.netGexLabel.textContent=confidence?'CONFIDENCE':flow?'FLOW GEX':'NET GEX';ui.zeroGammaLabel.textContent='ZERO Γ';ui.callWallLabel.textContent=flow?'CALL FLOW WALL':'CALL WALL';ui.putWallLabel.textContent=flow?'PUT FLOW WALL':'PUT WALL';
+      ui.netGex.textContent=metricText(metric);ui.zeroGamma.textContent=confidence?'—':number(flow?snap.flow_zero_gamma:snap.zero_gamma,1);ui.callWall.textContent=confidence?'—':number(flow?snap.flow_call_wall:snap.call_wall,1);ui.putWall.textContent=confidence?'—':number(flow?snap.flow_put_wall:snap.put_wall,1);ui.hvl.textContent=confidence?'—':number(flow?snap.flow_hvl:snap.hvl,1);ui.contracts.textContent=snap.contracts;
+      const rows=expiryRows(snap),sum=(field)=>rows.reduce((a,x)=>a+(x[field]||0),0);ui.callFlow.textContent=`${short(sum('call_buy_volume'))} / ${short(sum('call_sell_volume'))}`;ui.putFlow.textContent=`${short(sum('put_buy_volume'))} / ${short(sum('put_sell_volume'))}`;
+      ui.asOf.textContent=`快照 ${timeLabel(snap.as_of_us)} · ${state.expiry}`;ui.model.textContent=confidence?'Confidence = 报价45% + 成交分类35% + OI 20%':flow?'Flow GEX = 做市商反向主动成交代理':snap.model;ui.replayTime.textContent=timeLabel(snap.as_of_us);drawMain();drawProfile();drawOi();
+    }
+
+    const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    async function fetchBarsUntil(query,required,maxWait=15000) {
+      const deadline=Date.now()+maxWait;let bars=[];
+      do{
+        bars=await fetch('/api/v1/bars'+query,{cache:'no-store'}).then(r=>r.ok?r.json():[]);
+        if(Array.isArray(bars)&&bars.length>=required)return bars;
+        await delay(1500);
+      }while(Date.now()<deadline);
+      return Array.isArray(bars)?bars:[];
+    }
+    function finishChartLoading(started=performance.now()) {
+      const remaining=Math.max(0,350-(performance.now()-started));
+      setTimeout(()=>{state.switching=false;$('workspace').classList.remove('switching');ui.loading.classList.remove('interval-loading');ui.loading.classList.add('hidden')},remaining);
+    }
+
+    async function load(includeReplay=false) {
+      try {
+        const market=state.market,query=`?symbol=${encodeURIComponent(market)}`;
+        const latest=await fetch('/api/v1/analytics'+query,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error(r.status);return r.json()});
+        if(market!==state.market)return;
+        state.latest=latest;
+        upsertHeatmapSnapshot(latest);
+        if(!state.history.some(x=>x.as_of_us===latest.as_of_us)){
+          state.history.push(latest);
+          if(state.history.length>1200)state.history.shift();
+        }
+        const expiries=[...new Set(latest.strikes.map(x=>x.expiration))].sort();
+        if(!state.expiry||!expiries.includes(state.expiry))state.expiry=expiries[0]||'';
+        ui.expiry.innerHTML=expiries.map(x=>`<option value="${x}" ${x===state.expiry?'selected':''}>${x.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3')}</option>`).join('');
+        if(!state.switching)ui.loading.classList.add('hidden');
+        const health=await fetch('/api/v1/health',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+        const connected=health?.rithmic_connected===true;
+        ui.feedStatus.textContent=connected?'● Rithmic connected':'● Rithmic disconnected · 显示缓存';
+        ui.feedStatus.className=connected?'ok':'error';
+        ui.liveState.textContent=connected?'LIVE':'OFFLINE';
+        state.cursor=Math.min(state.cursor,state.history.length-1);
+        ui.replaySlider.max=Math.max(0,state.history.length-1);
+        updateUi();
+
+        if(includeReplay){
+          const started=performance.now(),required=Math.max(60,Math.ceil(state.interval/60)*30);
+          Promise.all([
+            fetch('/api/v1/replay'+query,{cache:'no-store'}).then(r=>r.ok?r.json():[]),
+            fetchBarsUntil(query,required),
+            fetch('/api/v1/heatmap'+query,{cache:'no-store'}).then(r=>r.ok?r.json():[])
+          ]).then(([replay, bars, heatmap]) => {
+            if(market!==state.market)return;
+            if(bars.length)state.bars=bars;
+            if(Array.isArray(heatmap)&&heatmap.length)state.heatmap=heatmap;
+            if(replay.length){
+              const map=new Map(state.history.map(x=>[x.as_of_us,x]));
+              replay.forEach(x=>map.set(x.as_of_us,x));
+              state.history=[...map.values()].sort((a,b)=>a.as_of_us-b.as_of_us).slice(-1200);
+              state.cursor=Math.min(state.cursor,state.history.length-1);
+              ui.replaySlider.max=Math.max(0,state.history.length-1);
+            }
+            updateUi();finishChartLoading(started);
+          }).catch(err=>{console.warn('Background replay load error:',err);finishChartLoading(started)});
+        }
+      } catch(error) {
+        if(!state.latest){
+          ui.loading.classList.remove('hidden');
+          ui.loading.innerHTML=`<span class="error">数据连接失败 · ${String(error.message||error)}</span>`;
+          ui.feedStatus.textContent='● disconnected';
+          ui.feedStatus.className='error';
+          ui.liveState.textContent='OFFLINE';
+        }
+      }
+    }
+
+    const zoomMotion={frame:0,xZoom:null,xOffset:null,yZoom:null,yCenter:null};
+    function xPanFromOffset(offset,zoom) {
+      const count=state.chart?.candles?.length??0,visible=Math.max(2,60/zoom),base=Math.max(1,count-visible);
+      const minPan=-Math.max(8,Math.ceil(visible*.6))/base;
+      return Math.max(minPan,Math.min(1,offset/base));
+    }
+    function currentXOffset(zoom=state.zoom,pan=state.pan) {
+      const count=state.chart?.candles?.length??0,visible=Math.max(2,60/zoom);
+      return pan*Math.max(1,count-visible);
+    }
+    function runZoomAnimation() {
+      let active=false;
+      if(zoomMotion.xZoom!=null){
+        state.zoom=Math.exp(Math.log(state.zoom)+(Math.log(zoomMotion.xZoom)-Math.log(state.zoom))*.24);
+        state.pan=xPanFromOffset(zoomMotion.xOffset,state.zoom);
+        if(Math.abs(Math.log(state.zoom/zoomMotion.xZoom))<.0005){
+          state.zoom=zoomMotion.xZoom;state.pan=xPanFromOffset(zoomMotion.xOffset,state.zoom);zoomMotion.xZoom=zoomMotion.xOffset=null;
+        }else active=true;
+      }
+      if(zoomMotion.yZoom!=null){
+        const baseCenter=state.chart?.domain?(state.chart.domain.baseMin+state.chart.domain.baseMax)/2:0;
+        const targetCenter=zoomMotion.yCenter??baseCenter,currentCenter=state.yCenter??baseCenter;
+        state.yZoom=Math.exp(Math.log(state.yZoom)+(Math.log(zoomMotion.yZoom)-Math.log(state.yZoom))*.24);
+        state.yCenter=currentCenter+(targetCenter-currentCenter)*.24;
+        if(Math.abs(Math.log(state.yZoom/zoomMotion.yZoom))<.0005&&Math.abs(state.yCenter-targetCenter)<.001){
+          state.yZoom=zoomMotion.yZoom;state.yCenter=zoomMotion.yCenter;zoomMotion.yZoom=zoomMotion.yCenter=null;
+        }else active=true;
+      }
+      updateUi();
+      zoomMotion.frame=active?requestAnimationFrame(runZoomAnimation):0;
+    }
+    function startZoomAnimation(){if(!zoomMotion.frame)zoomMotion.frame=requestAnimationFrame(runZoomAnimation)}
+    function stopZoomAnimation(){
+      if(zoomMotion.frame)cancelAnimationFrame(zoomMotion.frame);
+      zoomMotion.frame=0;zoomMotion.xZoom=zoomMotion.xOffset=zoomMotion.yZoom=zoomMotion.yCenter=null;
+    }
+    function applyZoom(next, _fraction=.5, smooth=true) {
+      next=Math.max(0.001,next);
+      let offset=zoomMotion.xOffset??currentXOffset();
+      if(next===1)offset=0;
+      if(!smooth){stopZoomAnimation();state.zoom=next;state.pan=xPanFromOffset(offset,next);updateUi();return}
+      zoomMotion.xZoom=next;zoomMotion.xOffset=offset;startZoomAnimation();
+    }
+    function resetZoom(){applyZoom(1,.5,true)}
+    function applyYZoom(next, fraction=.5, smooth=true) {
+      const domain=state.chart?.domain;if(!domain)return;
+      const rows=expiryRows(snapshot()), strikes=[...new Set(rows.map(r=>r.strike).filter(Number.isFinite))].sort((a,b)=>a-b);
+      const steps=strikes.slice(1).map((v,i)=>v-strikes[i]).filter(v=>v>0), minSpan=Math.max(1,steps.length?Math.min(...steps):1);
+      const maxZoom=Math.max(1,(domain.baseMax-domain.baseMin)/minSpan);
+      next=Math.max(0.25,Math.min(maxZoom,next));
+      const oldZoom=smooth?(zoomMotion.yZoom??state.yZoom):state.yZoom;
+      const baseCenter=(domain.baseMin+domain.baseMax)/2,oldCenter=smooth?(zoomMotion.yCenter??state.yCenter??baseCenter):(state.yCenter??baseCenter);
+      const oldSpan=(domain.baseMax-domain.baseMin)/oldZoom,price=oldCenter+(.5-fraction)*oldSpan,newSpan=(domain.baseMax-domain.baseMin)/next;
+      const center=next===1?null:price+(fraction-.5)*newSpan;
+      if(!smooth){stopZoomAnimation();state.yZoom=next;state.yCenter=center;updateUi();return}
+      zoomMotion.yZoom=next;zoomMotion.yCenter=center;startZoomAnimation();
+    }
+    function resetYZoom(){applyYZoom(1,.5,true)}
+    function resetAllZoom(){stopZoomAnimation();state.zoom=1;state.pan=0;state.yZoom=1;state.yCenter=null;updateUi()}
+
+    async function switchInterval(btn) {
+      const next=Number(btn.dataset.interval);if(state.switching||next===state.interval)return;
+      state.switching=true;document.querySelectorAll('[data-interval]').forEach(x=>x.classList.toggle('active',x===btn));
+      $('workspace').classList.add('switching');ui.loading.classList.add('interval-loading');ui.loading.classList.remove('hidden');ui.loading.textContent=`正在生成 ${btn.textContent} K 线…`;
+      const started=performance.now();
+      try{
+        const query=`?symbol=${encodeURIComponent(state.market)}`,required=Math.max(60,Math.ceil(next/60)*30);
+        const bars=await fetchBarsUntil(query,required);
+        if(Array.isArray(bars)&&bars.length)state.bars=bars;
+        state.interval=next;resetAllZoom();
+      }catch(error){
+        console.warn('K-line interval refresh error:',error);state.interval=next;resetAllZoom();
+      }finally{
+        finishChartLoading(started);
+      }
+    }
+    document.querySelectorAll('[data-interval]').forEach(btn=>btn.addEventListener('click',()=>switchInterval(btn)));
+    document.querySelectorAll('[data-gex-mode]').forEach(btn=>btn.addEventListener('click',()=>{state.gexMode=btn.dataset.gexMode;document.querySelectorAll('[data-gex-mode]').forEach(x=>x.classList.toggle('active',x===btn));updateUi()}));
+    ui.market.addEventListener('change',()=>{state.market=ui.market.value;state.history=[];state.heatmap=[];state.bars=[];state.latest=null;state.expiry='';state.cursor=0;state.switching=true;$('workspace').classList.add('switching');ui.loading.classList.add('interval-loading');resetAllZoom();ui.loading.classList.remove('hidden');ui.loading.textContent=`正在加载 ${state.market} 图表数据…`;load(true)});
+    ui.expiry.addEventListener('change',()=>{state.expiry=ui.expiry.value;updateUi()});ui.refreshBtn.addEventListener('click',()=>load(true));
+    $('yZoomOut').addEventListener('click',()=>applyYZoom((zoomMotion.yZoom??state.yZoom)/1.5));
+    $('yZoomIn').addEventListener('click',()=>applyYZoom((zoomMotion.yZoom??state.yZoom)*1.5));
+    $('yZoomReset').addEventListener('click',resetYZoom);
+    ui.replayBtn.addEventListener('click',()=>{state.replay=!state.replay;state.cursor=state.history.length-1;ui.replayBtn.classList.toggle('active',state.replay);ui.replayBar.classList.toggle('visible',state.replay);ui.replaySlider.value=state.cursor;state.playing=false;ui.playBtn.textContent='▶';updateUi()});
+    ui.replaySlider.addEventListener('input',()=>{state.cursor=Number(ui.replaySlider.value);updateUi()});
+    ui.playBtn.addEventListener('click',()=>{state.playing=!state.playing;ui.playBtn.textContent=state.playing?'❚❚':'▶';clearInterval(state.timer);if(state.playing)state.timer=setInterval(()=>{if(state.cursor>=state.history.length-1){state.playing=false;ui.playBtn.textContent='▶';clearInterval(state.timer);return}state.cursor++;ui.replaySlider.value=state.cursor;updateUi()},350)});
+    $('mainChart').addEventListener('mousemove',event=>{
+      const c=state.chart;if(!c)return;
+      const rect=event.currentTarget.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+
+      if(!state.dragging){
+        if(y>=c.bottom&&x>=c.left&&x<=c.right){
+          event.currentTarget.style.cursor='ew-resize';
+          ui.tooltip.style.display='none';
+        } else if(x>=c.right&&y>=c.top&&y<=c.bottom){
+          event.currentTarget.style.cursor='ns-resize';
+          ui.tooltip.style.display='none';
+        } else if(x>=c.left&&x<=c.right&&y>=c.top&&y<=c.bottom){
+          event.currentTarget.style.cursor='grab';
+        } else {
+          event.currentTarget.style.cursor='default';
+          ui.tooltip.style.display='none';
+        }
+      }
+
+      if(x>=c.left&&x<=c.right&&y>=c.top&&y<=c.bottom&&c.candles?.length){
+        const N_c=c.candles.length,rawCi=Math.round((N_c-1)-c.panOffset-(c.right-x)/c.barW);
+        if(rawCi<0||rawCi>=N_c){ui.tooltip.style.display='none';return}
+        const ci=rawCi,bar=c.candles[ci],i=Math.max(0,Math.min(c.history.length-1,Math.round(ci/Math.max(1,N_c-1)*(c.history.length-1)))),p=c.history[i],price=c.domain.max-(y-c.top)/Math.max(1,c.bottom-c.top)*(c.domain.max-c.domain.min);
+        const label=state.gexMode==='confidence'?'Confidence':state.gexMode==='flow'?'Flow GEX':'Net GEX',value=metricText(snapshotMetric(p));ui.tooltip.innerHTML=bar?`${timeLabel(bar.time*1e6)}<br>O ${number(bar.open,2)}　H ${number(bar.high,2)}<br>L ${number(bar.low,2)}　C ${number(bar.close,2)}<br>${label} ${value}`:`${timeLabel(p?.as_of_us)}<br>Spot ${number(p?.underlying_price,2)}<br>Level ${number(price,1)}<br>${label} ${value}`;
+        ui.tooltip.style.display='block';
+        ui.tooltip.style.left=Math.min(x+14,c.w-190)+'px';
+        ui.tooltip.style.top=Math.max(45,y-62)+'px';
+      } else {
+        ui.tooltip.style.display='none';
+      }
+    });
+
+    $('mainChart').addEventListener('mouseleave',()=>ui.tooltip.style.display='none');
+    $('mainChart').addEventListener('wheel',event=>{
+      event.preventDefault();
+      const c=state.chart;if(!c)return;
+      const rect=event.currentTarget.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+      const delta=Math.abs(event.deltaY)>Math.abs(event.deltaX)?event.deltaY:event.deltaX;
+      const factor=Math.exp(-delta*.0018);
+
+      if(x>=c.right&&y>=c.top&&y<=c.bottom){
+        const fraction=Math.max(0,Math.min(1,(y-c.top)/Math.max(1,c.bottom-c.top)));
+        applyYZoom((zoomMotion.yZoom??state.yZoom)*factor,fraction);
+      } else {
+        const fraction=Math.max(0,Math.min(1,(x-c.left)/Math.max(1,c.right-c.left)));
+        applyZoom((zoomMotion.xZoom??state.zoom)*factor,fraction);
+      }
+    },{passive:false});
+
+    $('mainChart').addEventListener('mousedown',event=>{
+      if(event.button!==0)return;
+      const c=state.chart;if(!c)return;
+      const rect=event.currentTarget.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+
+      if(y>=c.bottom&&x>=c.left&&x<=c.right){
+        const fraction=Math.max(0,Math.min(1,(x-c.left)/Math.max(1,c.right-c.left)));
+        state.dragging={type:'x-scale',startX:event.clientX,startZoom:state.zoom,fraction};
+      } else if(x>=c.right&&y>=c.top&&y<=c.bottom){
+        const fraction=Math.max(0,Math.min(1,(y-c.top)/Math.max(1,c.bottom-c.top)));
+        state.dragging={type:'y-scale',startY:event.clientY,startYZoom:state.yZoom,fraction};
+      } else if(x>=c.left&&x<=c.right&&y>=c.top&&y<=c.bottom){
+        event.currentTarget.style.cursor='grabbing';
+        state.dragging={type:'xy-pan',startX:event.clientX,startY:event.clientY,pan:state.pan,center:state.yCenter??(c.domain.min+c.domain.max)/2,span:c.domain.max-c.domain.min,autoY:state.yCenter==null};
+      }
+    });
+
+    window.addEventListener('mousemove',event=>{
+      if(!state.dragging)return;
+      const c=state.chart;if(!c)return;
+
+      if(state.dragging.type==='x-scale'){
+        const dx=event.clientX-state.dragging.startX;
+        const factor=Math.exp(dx*.0025);
+        applyZoom(state.dragging.startZoom*factor,state.dragging.fraction,false);
+      } else if(state.dragging.type==='y-scale'){
+        const dy=state.dragging.startY-event.clientY;
+        const factor=Math.exp(dy*.0025);
+        applyYZoom(state.dragging.startYZoom*factor,state.dragging.fraction,false);
+      } else if(state.dragging.type==='xy-pan'){
+        const baseHist=activeHistory();
+        const candles=buildCandles(baseHist);
+        const visible=Math.max(2,60/state.zoom);
+        const maxStart=Math.max(1,candles.length-visible);
+        const minPan=-Math.max(8,Math.ceil(visible*.6))/maxStart;
+        const chartW=c.right-c.left, chartH=c.bottom-c.top;
+        const dx=event.clientX-state.dragging.startX;
+        const deltaPan=(dx/Math.max(1,chartW))*(visible/maxStart);
+        state.pan=Math.max(minPan,Math.min(1,state.dragging.pan+deltaPan));
+
+        const dy=event.clientY-state.dragging.startY;
+        if(!state.dragging.autoY||Math.abs(dy)>1)state.yCenter=state.dragging.center+dy/Math.max(1,chartH)*state.dragging.span;
+        updateUi();
+      } else if(state.dragging.type==='y-pan'){
+        const chartH=c.bottom-c.top,dy=event.clientY-state.dragging.startY;
+        state.yCenter=state.dragging.center+dy/Math.max(1,chartH)*state.dragging.span;
+        updateUi();
+      }
+    });
+
+    window.addEventListener('mouseup',()=>{
+      if(state.dragging){
+        state.dragging=null;
+        ['mainChart','gammaChart','oiChart'].forEach(id=>{const canvas=$(id);if(canvas)canvas.style.cursor='grab'});
+      }
+    });
+
+    function setupSideYInteractions(canvasId) {
+      const canvas=$(canvasId),axisWidth=44;
+      if(!canvas)return;
+      canvas.addEventListener('mousemove',event=>{
+        if(state.dragging)return;
+        const c=state.chart;if(!c)return;
+        const rect=canvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+        canvas.style.cursor=y>=c.top&&y<=c.bottom?(x<=axisWidth?'ns-resize':'grab'):'default';
+      });
+      canvas.addEventListener('mouseleave',()=>{if(!state.dragging)canvas.style.cursor='default'});
+      canvas.addEventListener('mousedown',event=>{
+        if(event.button!==0)return;
+        const c=state.chart;if(!c)return;
+        const rect=canvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+        if(y<c.top||y>c.bottom)return;
+        if(x<=axisWidth){
+          const fraction=Math.max(0,Math.min(1,(y-c.top)/Math.max(1,c.bottom-c.top)));
+          canvas.style.cursor='ns-resize';
+          state.dragging={type:'y-scale',startY:event.clientY,startYZoom:state.yZoom,fraction};
+        }else{
+          canvas.style.cursor='grabbing';
+          state.dragging={type:'y-pan',startY:event.clientY,center:state.yCenter??(c.domain.min+c.domain.max)/2,span:c.domain.max-c.domain.min};
+        }
+      });
+      canvas.addEventListener('wheel',event=>{
+        event.preventDefault();
+        const c=state.chart;if(!c)return;
+        const rect=canvas.getBoundingClientRect(),y=event.clientY-rect.top;
+        const fraction=Math.max(0,Math.min(1,(y-c.top)/Math.max(1,c.bottom-c.top)));
+        applyYZoom((zoomMotion.yZoom??state.yZoom)*Math.exp(-event.deltaY*.0018),fraction);
+      },{passive:false});
+      canvas.addEventListener('dblclick',resetYZoom);
+    }
+
+    setupSideYInteractions('gammaChart');
+    setupSideYInteractions('oiChart');
+
+    function setupSplitter(splitterId, getParams, setParams) {
+      const el = $(splitterId);
+      if(!el) return;
+      el.addEventListener('mousedown', event => {
+        if(event.button !== 0) return;
+        event.preventDefault();
+        const startX = event.clientX;
+        const initParams = getParams();
+        el.classList.add('dragging');
+        const onMove = e => {
+          const dx = e.clientX - startX;
+          setParams(initParams, dx);
+          updateUi();
+        };
+        const onUp = () => {
+          el.classList.remove('dragging');
+          window.removeEventListener('mousemove', onMove);
+          window.removeEventListener('mouseup', onUp);
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+      });
+    }
+
+    setupSplitter('splitterMainGamma',
+      () => state.gammaW,
+      (init, dx) => {
+        const ws = $('workspace');
+        state.gammaW = Math.max(120, Math.min(700, init - dx));
+        ws.style.setProperty('--gamma-w', `${state.gammaW}px`);
+      }
+    );
+
+    setupSplitter('splitterGammaOi',
+      () => ({ gamma: state.gammaW, oi: state.oiW }),
+      (init, dx) => {
+        const ws = $('workspace');
+        const nextGamma = Math.max(120, init.gamma + dx);
+        const nextOi = Math.max(120, init.oi - dx);
+        if (nextGamma >= 120 && nextOi >= 120) {
+          state.gammaW = nextGamma;
+          state.oiW = nextOi;
+          ws.style.setProperty('--gamma-w', `${nextGamma}px`);
+          ws.style.setProperty('--oi-w', `${nextOi}px`);
+        }
+      }
+    );
+
+    $('mainChart').addEventListener('dblclick', event => {
+      const c = state.chart;
+      if (!c) { resetAllZoom(); return; }
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      if (x >= c.right) resetYZoom();
+      else if (y >= c.bottom) resetZoom();
+      else resetAllZoom();
+    });
+    new ResizeObserver(()=>updateUi()).observe(document.querySelector('.workspace'));
+    setInterval(()=>ui.clock.textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false}),1000);setInterval(()=>{if(!state.replay)load(false)},3000);load(true);
+  </script>
+</body>
+</html>

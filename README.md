@@ -6,13 +6,14 @@ implements Sierra Chart's official DTC binary protocol on `localhost`.
 
 The bridge is usable today for:
 
-- real-time Last Trade and Best Bid/Ask;
+- real-time Last Trade, Best Bid/Ask, and available session statistics;
+- one-shot market-data and aggregated-depth snapshots;
 - Time & Sales with at-bid/at-ask classification;
 - a complete internal Rithmic Depth-by-Order (DBO) book, aggregated to DTC
   Market-by-Price/L2 for Sierra Chart;
 - Chart DOM, Numbers Bars/Footprint, Volume Profile, and Delta;
 - historical ticks, intraday bars, and daily OHLCV fallback bars;
-- dynamic futures discovery and a front-month futures catalog; and
+- dynamic futures discovery, exchange/underlying enumeration, and a front-month futures catalog; and
 - opt-in **Rithmic Paper Trading only** for standalone Market, Limit, Stop Market,
   and Stop Limit orders.
 
@@ -78,6 +79,67 @@ The default listener is `127.0.0.1:11099`; override it with
 `DTC_LISTEN_ADDR`. Do not expose this unauthenticated development server to a
 public or untrusted network.
 
+## Futures-options analytics service
+
+The same process can run the server-side options path alongside Sierra Chart:
+
+```text
+                    +-> JSONL snapshot database
+Rithmic -> Gateway -+-> Options Analyzer / HTTP API
+                    +-> DTC -> Sierra Chart
+```
+
+Enable it with `RITHMIC_ENABLE_OPTIONS=true` and set
+`RITHMIC_OPTIONS_UNDERLYING_SYMBOL` to the exact active futures contract. The
+gateway discovers `FUTURE_OPTION` instruments from Rithmic, selects the nearest
+configured expirations and strikes, and subscribes through the existing market
+plant. Its default dashboard is `http://127.0.0.1:11100/`; the current snapshot
+is also available from `/api/v1/analytics` and health from `/api/v1/health`.
+The current-process replay buffer is available from `/api/v1/replay` (up to
+1,200 snapshots).
+
+The intraday default is the nearest expiration only (`OPTIONS_MAX_EXPIRATIONS=1`),
+matching a standalone front-expiry view and avoiding a partially truncated next
+expiry when `OPTIONS_MAX_CONTRACTS` is reached. Increase it only when the
+contract cap is large enough to retain complete chains for every selected expiry.
+
+The configured root is the only market enabled by default. Additional markets
+must be listed explicitly, for example
+`RITHMIC_OPTIONS_MARKETS=ES:ESU6:CME,NQ:NQU6:CME`. This keeps a slow or
+unentitled secondary option board from delaying the primary market.
+
+The dashboard is a live trading surface rather than a diagnostic table. Its
+main canvas overlays the underlying-price path on a time-by-strike GEX heatmap;
+the side panes show the current gamma profile and call/put OI distribution. It
+also provides expiry and time-range controls, key-level overlays, aggressor-flow
+totals, hover inspection, and snapshot replay. The UI is dependency-free and is
+embedded into the release binary from `src/options_dashboard.html`.
+Snapshots are appended to `data/options/snapshots.jsonl` for persistence and
+future replay/backtesting.
+
+The MVP exposes a HuntingFlow-style working set: underlying price, gamma regime,
+net GEX proxy, zero-gamma/HVL, call and put walls, and per-strike call/put OI,
+aggressor-classified flow, implied volatility, and gamma exposure. It is an
+independent implementation based on publicly documented concepts; it does not
+copy Hermes branding, private formulas, or proprietary UI assets.
+
+Important data semantics:
+
+- each option trade is collected per contract; `aggressor=1` is classified as
+  buyer-initiated/at ask and `aggressor=2` as seller-initiated/at bid;
+- this identifies the aggressor side, not whether either participant opened or
+  closed a position;
+- Rithmic open interest is retained per contract. At session start it is normally
+  the exchange's most recently published OI (typically prior-session OI), not a
+  real-time open/close ledger;
+- GEX is explicitly labeled as a model estimate. The initial convention assumes
+  calls are dealer-long and puts dealer-short and uses Black-76 implied gamma;
+  it should be calibrated before it is used as a trading signal.
+
+For a remote server, leave the analyzer bound to loopback and place an
+authenticated TLS reverse proxy or VPN in front of it. The built-in HTTP endpoint
+has no authentication and should not be exposed directly to the internet.
+
 ## Probe acceptance criteria
 
 The process exits successfully only after it has observed all of:
@@ -109,7 +171,7 @@ cargo run --bin dtc_server
 It logs into Rithmic first and then listens on `127.0.0.1:11099` by default.
 Override this with `DTC_LISTEN_ADDR`. The server supports official fixed-length
 Binary Encoding negotiation, logon, heartbeat, logoff, dynamic futures security definitions,
-market-data subscribe/unsubscribe, Last Trade, Best Bid/Ask, aggregated L2 market
+market-data subscribe/unsubscribe/snapshot, Last Trade, Best Bid/Ask, aggregated L2 market
 depth, historical ticks, and historical intraday bars. Third-party MBO is never
 advertised to Sierra Chart: the complete Rithmic Depth-by-Order book exists only
 inside the bridge and is aggregated to Market-by-Price before it reaches DTC.
@@ -167,8 +229,9 @@ same trial account.
 Historical data is enabled whenever the server starts successfully. Sierra can
 request tick records or time bars through a dedicated DTC historical connection,
 which remains open for multiple sequential requests as required by Sierra 2945.
-The bridge does not apply a local day cap: Sierra's requested start time and
-`MaxDays` are forwarded to Rithmic. Tick history is fetched in bounded windows
+The bridge applies the requested `MaxDays` relative to the end time, taking the
+later of that boundary and Sierra's explicit start time. It imposes no additional
+day cap. Tick history is fetched in bounded windows
 (`RITHMIC_HISTORY_TICK_CHUNK_HOURS`, default: 6) and streamed to Sierra as each
 window completes, keeping memory bounded and the DTC download active. Some Rithmic Paper systems
 return no records for `DAILY_BAR`; in that case the bridge retries the same
@@ -305,11 +368,13 @@ that a Sierra symbol setting reached the bridge.
 ```text
 src/bin/rithmic_probe.rs  Upstream permission and live-data gate
 src/bin/dtc_server.rs     Local server entry point
-src/dtc.rs                DTC framing, sessions, market/history/trading messages
+src/market_gateway.rs     Provider-neutral market/history/trading contracts
+src/dtc.rs                DTC wire framing, encoding, and Sierra sessions
 src/rithmic_feed.rs       Market plant supervision, catalog, subscriptions, DBO
 src/order_book.rs         Full order book and Market-by-Price aggregation
 src/history_feed.rs       History plant and bounded streaming requests
 src/trading_feed.rs       Paper-only orders, positions, balances, and PnL
+src/options.rs            Independent option collection, analytics, persistence, HTTP
 src/identity.rs           Process-local synthetic MAC identity
 tests/                    Credentialed ignored end-to-end checks
 ```
@@ -323,6 +388,16 @@ tests/                    Credentialed ignored end-to-end checks
   real-time L2 stream locally for its historical depth graph.
 - Trading is standalone-order, Paper-only, and opt-in. OCO/attached-order
   semantics, historical fills, and live trading are not advertised.
-- The current order-price safety validator is validated for 0.25-tick ES/NQ-style
-  contracts. Do not trade contracts with another tick size through this build.
+- The order-price validator supports 0.25-tick ES/NQ-style contracts. Submissions
+  for other tick sizes are explicitly rejected before reaching Rithmic.
+- Session statistics include available open/high/low, cumulative volume, open
+  interest, and settlement data. Total session trade count and trading-session
+  date remain unset when upstream does not provide them.
+- Exchange/underlying enumeration queries permitted futures contracts. Definition
+  definitions include upstream expiration dates and exchange symbols when available.
+  Definition subscriptions do not yet push later metadata changes; rollover,
+  margin, and delayed-data metadata are not fully mapped.
 - A Rithmic trial account may reject simultaneous sessions from another platform.
+
+The [DTC audit fix record](docs/dtc-audit/fixes.md) tracks the September 2026
+protocol fixes, offline regressions, and remaining implementation limits.

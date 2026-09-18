@@ -1,0 +1,25 @@
+[Unit]
+Description=Rithmic DTC bridge and options analytics
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rithmic
+Group=rithmic
+WorkingDirectory=/var/lib/rithmic-dtc-bridge
+EnvironmentFile=/etc/rithmic-credentials.env
+EnvironmentFile=/etc/rithmic-dtc-bridge.env
+ExecStart=/usr/local/bin/rithmic-dtc-bridge
+Restart=on-failure
+# Rithmic may reject fresh sessions during its weekend maintenance window.
+# Retry gently so a temporary gateway refusal cannot create a login storm.
+RestartSec=60
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/rithmic-dtc-bridge
+
+[Install]
+WantedBy=multi-user.target

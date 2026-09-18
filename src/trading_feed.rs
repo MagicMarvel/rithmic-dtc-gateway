@@ -20,11 +20,11 @@ use rithmic_rs::{
 use tokio::sync::{RwLock, broadcast, mpsc};
 
 use crate::{
-    dtc::{
+    identity::synthetic_mac,
+    market_gateway::{
         AccountBalance, CancelOrderRequest, ModifyOrderRequest, NewOrderRequest, TradeAccount,
         TradingCommand, TradingDataClient, TradingEvent, TradingOrder, TradingPosition,
     },
-    identity::synthetic_mac,
 };
 
 #[derive(Debug)]
@@ -550,11 +550,9 @@ fn apply_mapped_order(
         if let Some(existing) = orders.get(&order.server_order_id) {
             merge_order(existing, &mut order);
         }
-        if is_terminal(order.order_status) {
-            orders.remove(&order.server_order_id);
-        } else {
-            orders.insert(order.server_order_id.clone(), order.clone());
-        }
+        // Retain terminal status for subsequent cancel/replace rejections.
+        // Open-order snapshots below still exclude terminal orders.
+        orders.insert(order.server_order_id.clone(), order.clone());
     }
     if order.is_snapshot {
         if is_terminal(order.order_status) {
@@ -660,6 +658,9 @@ fn reject_command(command: TradingCommand, reason: &str) {
         TradingCommand::OpenOrders(response) => {
             let _ = response.send(Err(reason));
         }
+        TradingCommand::OrderState(_, response) => {
+            let _ = response.send(Err(reason));
+        }
         TradingCommand::Positions(response) => {
             let _ = response.send(Err(reason));
         }
@@ -695,7 +696,14 @@ async fn handle_command(
             }]));
         }
         TradingCommand::OpenOrders(response) => {
-            let _ = response.send(Ok(orders.values().cloned().collect()));
+            let _ = response.send(Ok(orders
+                .values()
+                .filter(|order| !is_terminal(order.order_status))
+                .cloned()
+                .collect()));
+        }
+        TradingCommand::OrderState(id, response) => {
+            let _ = response.send(Ok(orders.get(&id).cloned()));
         }
         TradingCommand::Positions(response) => {
             let _ = response.send(Ok(positions.read().await.values().cloned().collect()));
@@ -820,6 +828,9 @@ async fn modify_order(
     if request.client_order_id != existing.client_order_id {
         return Err("ClientOrderID does not match the working order".to_owned());
     }
+    if is_terminal(existing.order_status) {
+        return Err("Order is no longer working".to_owned());
+    }
     let requested_quantity = if request.quantity == 0.0 {
         existing.quantity
     } else {
@@ -912,6 +923,9 @@ async fn cancel_order(
         .ok_or_else(|| "unknown or non-working ServerOrderID".to_owned())?;
     if request.client_order_id != existing.client_order_id {
         return Err("ClientOrderID does not match the working order".to_owned());
+    }
+    if is_terminal(existing.order_status) {
+        return Err("Order is no longer working".to_owned());
     }
     let cancel = RithmicCancelOrder::new()
         .id(request.server_order_id)
@@ -1475,7 +1489,7 @@ mod tests {
             is_snapshot: true,
         };
         apply_mapped_order(order, &mut orders, &mut used_ids, &events);
-        assert!(orders.is_empty());
+        assert_eq!(orders["filled-basket"].order_status, 7);
         assert!(used_ids.contains("old-client-id"));
         assert!(matches!(
             receiver.try_recv(),

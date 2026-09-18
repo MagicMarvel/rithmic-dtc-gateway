@@ -12,8 +12,9 @@ use rithmic_rs::{
 use tokio::sync::mpsc;
 
 use crate::{
-    dtc::{HistoricalRecord, HistoricalRequest, HistoricalResponse, HistoryDataClient},
     identity::synthetic_mac,
+    maintenance_retry::MaintenanceBackoff,
+    market_gateway::{HistoricalRecord, HistoricalRequest, HistoricalResponse, HistoryDataClient},
 };
 
 #[derive(Debug)]
@@ -73,7 +74,7 @@ impl RithmicHistoryFeed {
         let config = RithmicConfig::from_env(environment).map_err(|error| {
             HistoryError(format!("Rithmic history configuration failed: {error}"))
         })?;
-        let initial_session = establish_history_session(&config).await?;
+        let initial_session = establish_history_session_with_backoff(&config).await?;
 
         let (commands, mut receiver) = mpsc::channel(8);
         tokio::spawn(async move {
@@ -82,7 +83,7 @@ impl RithmicHistoryFeed {
                 match command {
                     HistoryCommand::Load { request, response } => {
                         if session.is_none() {
-                            session = establish_history_session(&config).await.ok();
+                            session = establish_history_session_with_backoff(&config).await.ok();
                         }
                         let result = match session.as_ref() {
                             Some(active) => {
@@ -100,7 +101,7 @@ impl RithmicHistoryFeed {
                                 stale.handle.abort();
                                 let _ = stale.plant.await_shutdown().await;
                             }
-                            match establish_history_session(&config).await {
+                            match establish_history_session_with_backoff(&config).await {
                                 Ok(reconnected) => {
                                     session = Some(reconnected);
                                 }
@@ -207,13 +208,17 @@ fn historical_range(request: &HistoricalRequest) -> Result<(i64, i64), LoadHisto
     } else {
         request.end_time.min(i32::MAX as i64)
     };
-    let start = if request.start_time > 0 {
+    let mut start = if request.start_time > 0 {
         request.start_time
     } else if request.max_days > 0 {
         end.saturating_sub(i64::from(request.max_days) * 86_400)
+            .max(1)
     } else {
         1
     };
+    if request.max_days > 0 {
+        start = start.max(end.saturating_sub(i64::from(request.max_days) * 86_400));
+    }
     if start <= 0 || end <= 0 || start > end {
         return Err(LoadHistoryError::local("invalid historical time range"));
     }
@@ -246,6 +251,21 @@ async fn establish_history_session(config: &RithmicConfig) -> Result<HistorySess
         )));
     }
     Ok(HistorySession { plant, handle })
+}
+
+async fn establish_history_session_with_backoff(
+    config: &RithmicConfig,
+) -> Result<HistorySession, HistoryError> {
+    let mut backoff = MaintenanceBackoff::from_env();
+    loop {
+        match establish_history_session(config).await {
+            Ok(session) => return Ok(session),
+            Err(error) if MaintenanceBackoff::is_retryable(&error.to_string()) => {
+                backoff.wait("History", &error.to_string()).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
 }
 
 async fn load_history_with_timeout(
@@ -432,6 +452,32 @@ fn parse_environment(value: &str) -> Result<RithmicEnv, HistoryError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn max_days_caps_explicit_start_without_expanding_a_narrower_range() {
+        let end = 1_800_000_000;
+        let mut request = HistoricalRequest {
+            request_id: 1,
+            symbol: "ESU6".into(),
+            exchange: "CME".into(),
+            record_interval: 0,
+            start_time: end - 30 * 86_400,
+            end_time: end,
+            max_days: 2,
+        };
+        assert_eq!(historical_range(&request).unwrap(), (end - 2 * 86_400, end));
+        request.start_time = end - 3600;
+        assert_eq!(historical_range(&request).unwrap(), (end - 3600, end));
+        request.max_days = 0;
+        request.start_time = end - 30 * 86_400;
+        assert_eq!(
+            historical_range(&request).unwrap(),
+            (request.start_time, end)
+        );
+        request.start_time = 0;
+        request.max_days = u32::MAX;
+        assert_eq!(historical_range(&request).unwrap(), (1, end));
+    }
 
     #[test]
     fn retries_history_only_for_transport_failures() {

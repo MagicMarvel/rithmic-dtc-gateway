@@ -20,12 +20,16 @@ use rithmic_rs::{
 use tokio::sync::{broadcast, mpsc};
 
 use crate::{
-    dtc::{Instrument as DtcInstrument, MarketCommand, MarketDataClient, MarketEvent},
     identity::synthetic_mac,
+    maintenance_retry::MaintenanceBackoff,
+    market_data::{self, MarketSnapshot},
+    market_gateway::{
+        Instrument as MarketInstrument, MarketCommand, MarketDataClient, MarketEvent,
+        OptionContract, OptionType,
+    },
     order_book::{BookError, DepthLevel, OrderBook, OrderUpdate, Side, UpdateAction, diff_levels},
 };
 
-const MAX_CATALOG_SEARCH_RESULTS: usize = 32;
 const MAX_PUBLISHED_CATALOG_PRODUCTS: usize = 32;
 const PRIORITY_CATALOG_PRODUCTS: &[(&str, &str)] = &[
     ("ES", "CME"),
@@ -67,7 +71,7 @@ pub struct RithmicFeed {
     config: Arc<RithmicConfig>,
     initial_plant: Arc<Mutex<Option<RithmicTickerPlant>>>,
     client_active: Arc<AtomicBool>,
-    catalog_cache: Arc<Mutex<Option<Vec<DtcInstrument>>>>,
+    catalog_cache: Arc<Mutex<Option<Vec<MarketInstrument>>>>,
 }
 
 impl RithmicFeed {
@@ -76,9 +80,16 @@ impl RithmicFeed {
             parse_environment(&env::var("RITHMIC_ENV").unwrap_or_else(|_| "demo".to_owned()))?;
         let config = RithmicConfig::from_env(environment)
             .map_err(|error| FeedError(format!("Rithmic configuration failed: {error}")))?;
-        let plant = connect_and_login(&config, ConnectStrategy::Simple)
-            .await
-            .map_err(FeedError)?;
+        let mut backoff = MaintenanceBackoff::from_env();
+        let plant = loop {
+            match connect_and_login(&config, ConnectStrategy::Simple).await {
+                Ok(plant) => break plant,
+                Err(error) if MaintenanceBackoff::is_retryable(&error) => {
+                    backoff.wait("Ticker", &error).await;
+                }
+                Err(error) => return Err(FeedError(error)),
+            }
+        };
         Ok(Self {
             config: Arc::new(config),
             initial_plant: Arc::new(Mutex::new(Some(plant))),
@@ -148,7 +159,7 @@ async fn run_market_supervisor(
     config: Arc<RithmicConfig>,
     initial_plant: Arc<Mutex<Option<RithmicTickerPlant>>>,
     client_active: Arc<AtomicBool>,
-    catalog_cache: Arc<Mutex<Option<Vec<DtcInstrument>>>>,
+    catalog_cache: Arc<Mutex<Option<Vec<MarketInstrument>>>>,
     mut commands: mpsc::Receiver<MarketCommand>,
     events: mpsc::Sender<MarketEvent>,
 ) {
@@ -252,17 +263,22 @@ async fn run_market_supervisor(
 async fn run_connected_session(
     handle: &mut RithmicTickerPlantHandle,
     user: &str,
-    catalog_cache: &Arc<Mutex<Option<Vec<DtcInstrument>>>>,
+    catalog_cache: &Arc<Mutex<Option<Vec<MarketInstrument>>>>,
     commands: &mut mpsc::Receiver<MarketCommand>,
     events: &mpsc::Sender<MarketEvent>,
     subscriptions: &mut HashMap<u32, (String, String)>,
     depth: &mut HashMap<u32, DepthSubscription>,
 ) -> SessionExit {
+    // Cleared on every upstream connection; never serve a stale pre-reconnect quote.
+    let mut snapshots: HashMap<(String, String), MarketSnapshot> = HashMap::new();
     loop {
         tokio::select! {
             command = commands.recv() => {
                 let Some(command) = command else { return SessionExit::ClientClosed };
                 match command {
+                    MarketCommand::DiscoverOptions { underlying, exchange, expiration, response } => {
+                        let _ = response.send(discover_options(handle, &underlying, &exchange, expiration.as_deref()).await);
+                    }
                     MarketCommand::LoadCatalog {
                         preferred_underlying,
                         response,
@@ -289,11 +305,15 @@ async fn run_connected_session(
                     MarketCommand::SearchCatalog {
                         search_text,
                         exchange,
+                        search_type,
                         response,
                     } => {
                         let _ = response.send(
-                            search_catalog(handle, &search_text, &exchange).await,
+                            search_catalog(handle, user, &search_text, &exchange, search_type).await,
                         );
+                    }
+                    MarketCommand::EnumerateCatalog { exchange, underlying, roots_only, response } => {
+                        let _ = response.send(enumerate_catalog(handle, user, &exchange, &underlying, roots_only).await);
                     }
                     MarketCommand::ResolveCatalogInstrument {
                         symbol,
@@ -305,18 +325,38 @@ async fn run_connected_session(
                         );
                     }
                     MarketCommand::Subscribe { symbol_id, symbol, exchange, response } => {
-                        let result = if subscriptions.contains_key(&symbol_id) {
-                            Err(format!("SymbolID {symbol_id} is already subscribed"))
+                        let result = if let Err(error) = validate_subscription(subscriptions, symbol_id, &symbol, &exchange) {
+                            Err(error)
                         } else {
-                            subscribe(&handle, &symbol, &exchange).await.map(|()| {
+                            capture_market_snapshot(handle, &symbol, &exchange, false).await.map(|snapshot| {
+                                snapshots.insert((symbol.clone(), exchange.clone()), snapshot.clone());
                                 subscriptions.insert(symbol_id, (symbol, exchange));
+                                snapshot
                             })
                         };
                         let _ = response.send(result);
                     }
+                    MarketCommand::Snapshot { symbol, exchange, response } => {
+                        let active = subscriptions.values().any(|(s, e)| s == &symbol && e == &exchange);
+                        let result = if active {
+                            if let Some(snapshot) = snapshots.get(&(symbol.clone(), exchange.clone())) {
+                                Ok(snapshot.clone())
+                            } else { Ok(MarketSnapshot::default()) }
+                        } else { capture_market_snapshot(handle, &symbol, &exchange, true).await };
+                        let _ = response.send(result);
+                    }
+                    MarketCommand::DepthSnapshot { symbol, exchange, tick_size, max_levels, response } => {
+                        // DBO snapshot is a request, not a streaming subscription.
+                        let result = create_depth_subscription(handle, 0, symbol, exchange, tick_size, max_levels, false)
+                            .await.map(|(_, levels)| levels);
+                        let _ = response.send(result);
+                    }
                     MarketCommand::Unsubscribe { symbol_id, response } => {
                         let result = match subscriptions.remove(&symbol_id) {
-                            Some((symbol, exchange)) => unsubscribe(&handle, &symbol, &exchange).await,
+                            Some((symbol, exchange)) => {
+                                snapshots.remove(&(symbol.clone(), exchange.clone()));
+                                unsubscribe(&handle, &symbol, &exchange).await
+                            }
                             None => Err(format!("SymbolID {symbol_id} is not subscribed")),
                         };
                         let _ = response.send(result);
@@ -382,6 +422,26 @@ async fn run_connected_session(
                         if let Some(reason) = connection_loss_reason(&response) {
                             return SessionExit::ConnectionLost(reason);
                         }
+                        if let Some((symbol, exchange)) = market_data::key(&response.message).filter(|_| response.error.is_none()) {
+                            if subscriptions.values().any(|(s,e)| s == symbol && e == exchange) {
+                                let snapshot = snapshots.entry((symbol.to_owned(), exchange.to_owned())).or_default();
+                                snapshot.apply(&response.message);
+                                for (&symbol_id, _) in subscriptions.iter().filter(|(_, (s,e))| s == symbol && e == exchange) {
+                                    match &response.message {
+                                        RithmicMessage::TradeStatistics(_) | RithmicMessage::OpenInterest(_) | RithmicMessage::EndOfDayPrices(_) => {
+                                            let _ = events.send(MarketEvent::Snapshot {symbol_id, snapshot: snapshot.clone()}).await;
+                                        }
+                                        RithmicMessage::LastTrade(v) if v.volume.is_some() || v.clear_bits.unwrap_or(0) & 8 != 0 => {
+                                            let _ = events.send(MarketEvent::SessionVolume {symbol_id, volume: snapshot.volume.unwrap_or(f64::MAX)}).await;
+                                        }
+                                        RithmicMessage::BestBidOffer(v) if v.bid_price.is_none() || v.ask_price.is_none() || v.clear_bits.unwrap_or(0) != 0 => {
+                                            let _ = events.send(MarketEvent::Snapshot {symbol_id, snapshot: snapshot.clone()}).await;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        }
                         forward_response(&handle, subscriptions, depth, response, events).await
                     }
                     Err(broadcast::error::RecvError::Lagged(skipped)) => {
@@ -398,6 +458,159 @@ async fn run_connected_session(
             }
         }
     }
+}
+
+async fn discover_options(
+    handle: &RithmicTickerPlantHandle,
+    underlying: &str,
+    exchange: &str,
+    expiration: Option<&str>,
+) -> Result<Vec<OptionContract>, String> {
+    let responses = handle
+        .get_instrument_by_underlying(underlying, exchange, expiration)
+        .await
+        .map_err(|error| error.to_string())?;
+    let response_count = responses.len();
+    let mut contracts = Vec::new();
+    let mut expirations = Vec::new();
+    let mut samples = Vec::new();
+    for response in responses {
+        if let Some(error) = response.error {
+            return Err(error.to_string());
+        }
+        let item = match response.message {
+            RithmicMessage::ResponseGetInstrumentByUnderlyingKeys(keys) => {
+                expirations.extend(keys.expiration_date);
+                continue;
+            }
+            RithmicMessage::ResponseGetInstrumentByUnderlying(item) => item,
+            _ => continue,
+        };
+        if samples.len() < 4 {
+            samples.push(format!(
+                "symbol={:?} type={:?} underlying={:?} expiry={:?} pc={:?} strike={:?}",
+                item.symbol,
+                item.instrument_type,
+                item.underlying_symbol,
+                item.expiration_date,
+                item.put_call_indicator,
+                item.strike_price
+            ));
+        }
+        if let Some(value) = item
+            .expiration_date
+            .clone()
+            .filter(|value| !value.is_empty())
+        {
+            expirations.push(value);
+        }
+        if let Some(contract) = option_contract_from_underlying(item, underlying, exchange) {
+            contracts.push(contract);
+        }
+    }
+    if contracts.is_empty() && expiration.is_none() {
+        println!(
+            "[Options] reference query {underlying}.{exchange}: {response_count} responses, {} expirations, samples: {}",
+            expirations.len(),
+            samples.join(" | ")
+        );
+        expirations.sort();
+        expirations.dedup();
+        let mut expiry_samples = Vec::new();
+        for expiry in expirations.into_iter().take(16) {
+            let responses = handle
+                .get_instrument_by_underlying(underlying, exchange, Some(&expiry))
+                .await
+                .map_err(|error| error.to_string())?;
+            for response in responses {
+                if let Some(error) = response.error {
+                    return Err(error.to_string());
+                }
+                let RithmicMessage::ResponseGetInstrumentByUnderlying(item) = response.message
+                else {
+                    continue;
+                };
+                if expiry_samples.len() < 8 {
+                    expiry_samples.push(format!(
+                        "query={expiry} symbol={:?} type={:?} underlying={:?} expiry={:?} pc={:?} strike={:?} exchange={:?}",
+                        item.symbol,
+                        item.instrument_type,
+                        item.underlying_symbol,
+                        item.expiration_date,
+                        item.put_call_indicator,
+                        item.strike_price,
+                        item.exchange
+                    ));
+                }
+                if let Some(contract) = option_contract_from_underlying(item, underlying, exchange)
+                {
+                    contracts.push(contract);
+                }
+            }
+        }
+        if contracts.is_empty() && !expiry_samples.is_empty() {
+            println!(
+                "[Options] rejected instrument samples for {underlying}.{exchange}: {}",
+                expiry_samples.join(" | ")
+            );
+        }
+    }
+    contracts.sort_by(|a, b| {
+        a.expiration
+            .cmp(&b.expiration)
+            .then_with(|| a.strike.total_cmp(&b.strike))
+            .then_with(|| (a.option_type as u8).cmp(&(b.option_type as u8)))
+    });
+    contracts.dedup_by(|a, b| a.symbol == b.symbol && a.exchange == b.exchange);
+    Ok(contracts)
+}
+
+fn option_contract_from_underlying(
+    item: rithmic_rs::rti::ResponseGetInstrumentByUnderlying,
+    underlying: &str,
+    exchange: &str,
+) -> Option<OptionContract> {
+    if !item
+        .instrument_type
+        .as_deref()
+        .is_some_and(|kind| kind.to_ascii_uppercase().contains("OPTION"))
+    {
+        return None;
+    }
+    let option_type = match item.put_call_indicator.as_deref().map(str::trim) {
+        Some(value) if value.eq_ignore_ascii_case("C") || value.eq_ignore_ascii_case("CALL") => {
+            OptionType::Call
+        }
+        Some(value) if value.eq_ignore_ascii_case("P") || value.eq_ignore_ascii_case("PUT") => {
+            OptionType::Put
+        }
+        _ => return None,
+    };
+    let (Some(symbol), Some(strike), Some(expiration)) =
+        (item.symbol, item.strike_price, item.expiration_date)
+    else {
+        return None;
+    };
+    if symbol.is_empty() || !strike.is_finite() || strike <= 0.0 {
+        return None;
+    }
+    Some(OptionContract {
+        symbol,
+        exchange: item.exchange.unwrap_or_else(|| exchange.to_owned()),
+        underlying: item
+            .underlying_symbol
+            .unwrap_or_else(|| underlying.to_owned()),
+        expiration,
+        strike,
+        option_type,
+        multiplier: item
+            .single_point_value
+            .filter(|value| value.is_finite() && *value > 0.0)
+            .unwrap_or(1.0),
+        tick_size: item
+            .min_qprice_change
+            .filter(|value| value.is_finite() && *value > 0.0),
+    })
 }
 
 fn connection_loss_reason(response: &RithmicResponse) -> Option<String> {
@@ -456,7 +669,7 @@ async fn list_catalog_exchanges(
 async fn load_catalog(
     handle: &RithmicTickerPlantHandle,
     preferred_underlying: &str,
-) -> Result<Vec<DtcInstrument>, String> {
+) -> Result<Vec<MarketInstrument>, String> {
     let responses = handle
         .get_product_codes(None, Some(true))
         .await
@@ -547,9 +760,16 @@ fn catalog_product_priority(product: &str, preferred_underlying: &str) -> usize 
 
 async fn search_catalog(
     handle: &RithmicTickerPlantHandle,
+    user: &str,
     search_text: &str,
     exchange: &str,
-) -> Result<Vec<DtcInstrument>, String> {
+    search_type: i32,
+) -> Result<Vec<MarketInstrument>, String> {
+    // Upstream search has no Description selector. Enumerate when searching
+    // descriptions (or both fields), then let DTC apply its exact filter.
+    if search_type != 1 {
+        return enumerate_catalog(handle, user, exchange, "", false).await;
+    }
     let responses = handle
         .search_symbols(
             search_text,
@@ -575,14 +795,105 @@ async fn search_catalog(
     }
     keys.sort_unstable();
     keys.dedup();
-    keys.truncate(MAX_CATALOG_SEARCH_RESULTS);
 
     let mut instruments = Vec::with_capacity(keys.len());
     for (symbol, exchange) in keys {
-        if let Ok(instrument) = resolve_catalog_instrument(handle, &symbol, &exchange).await {
-            instruments.push(instrument);
+        instruments.push(resolve_catalog_instrument(handle, &symbol, &exchange).await?);
+    }
+    Ok(instruments)
+}
+
+async fn enumerate_catalog(
+    handle: &RithmicTickerPlantHandle,
+    user: &str,
+    exchange: &str,
+    underlying: &str,
+    roots_only: bool,
+) -> Result<Vec<MarketInstrument>, String> {
+    let exchanges = if exchange.is_empty() {
+        list_catalog_exchanges(handle, user).await?
+    } else {
+        vec![exchange.to_owned()]
+    };
+    let mut products = Vec::new();
+    for exchange in exchanges {
+        if !underlying.is_empty() {
+            products.push((underlying.to_owned(), exchange, String::new()));
+            continue;
+        }
+        for response in handle
+            .get_product_codes(Some(&exchange), Some(false))
+            .await
+            .map_err(|e| e.to_string())?
+        {
+            if let Some(error) = response.error {
+                return Err(error.to_string());
+            }
+            if let RithmicMessage::ResponseProductCodes(item) = response.message {
+                if let Some(product) = item.product_code.filter(|p| !p.is_empty()) {
+                    products.push((
+                        product,
+                        item.exchange.unwrap_or_else(|| exchange.clone()),
+                        item.symbol_name.unwrap_or_default(),
+                    ));
+                }
+            }
         }
     }
+    products.sort();
+    products.dedup_by(|a, b| a.0 == b.0 && a.1 == b.1);
+    let mut instruments = Vec::new();
+    let mut keys = HashSet::new();
+    for (product, exchange, description) in products {
+        if roots_only {
+            instruments.push(MarketInstrument {
+                symbol: String::new(),
+                exchange,
+                underlying_symbol: product,
+                description,
+                min_price_increment: 0.0,
+                price_display_format: -1,
+                currency_value_per_increment: 0.0,
+                contract_size: 0.0,
+                currency: String::new(),
+                expiration_date: 0,
+                exchange_symbol: String::new(),
+            });
+            continue;
+        }
+        for response in handle
+            .get_instrument_by_underlying(&product, &exchange, None)
+            .await
+            .map_err(|e| e.to_string())?
+        {
+            if let Some(error) = response.error {
+                return Err(error.to_string());
+            }
+            if let RithmicMessage::ResponseGetInstrumentByUnderlying(item) = response.message {
+                if item
+                    .instrument_type
+                    .as_deref()
+                    .is_some_and(|kind| !kind.eq_ignore_ascii_case("FUTURE"))
+                {
+                    continue;
+                }
+                if let Some(symbol) = item.symbol.filter(|s| !s.is_empty()) {
+                    let exchange = item.exchange.unwrap_or_else(|| exchange.clone());
+                    if keys.insert((symbol.clone(), exchange.clone())) {
+                        instruments
+                            .push(resolve_catalog_instrument(handle, &symbol, &exchange).await?);
+                    }
+                }
+            }
+        }
+    }
+    instruments.sort_by(|a, b| {
+        (&a.exchange, &a.underlying_symbol, &a.symbol).cmp(&(
+            &b.exchange,
+            &b.underlying_symbol,
+            &b.symbol,
+        ))
+    });
     Ok(instruments)
 }
 
@@ -590,7 +901,7 @@ async fn resolve_catalog_instrument(
     handle: &RithmicTickerPlantHandle,
     symbol: &str,
     exchange: &str,
-) -> Result<DtcInstrument, String> {
+) -> Result<MarketInstrument, String> {
     if symbol.trim().is_empty() || exchange.trim().is_empty() {
         return Err("Both symbol and exchange are required for Rithmic reference data".to_owned());
     }
@@ -605,10 +916,10 @@ async fn resolve_catalog_instrument(
         return Err("Rithmic returned no reference data".to_owned());
     };
     let info = InstrumentInfo::try_from(&reference).map_err(|error| error.to_string())?;
-    dtc_instrument_from_rithmic(info)
+    instrument_from_rithmic(info)
 }
 
-fn dtc_instrument_from_rithmic(info: InstrumentInfo) -> Result<DtcInstrument, String> {
+fn instrument_from_rithmic(info: InstrumentInfo) -> Result<MarketInstrument, String> {
     if info
         .instrument_type
         .as_deref()
@@ -626,14 +937,14 @@ fn dtc_instrument_from_rithmic(info: InstrumentInfo) -> Result<DtcInstrument, St
     let point_value = info
         .point_value
         .filter(|value| value.is_finite() && *value > 0.0)
-        .unwrap_or(1.0);
+        .unwrap_or(0.0);
     let price_display_format = i32::from(info.price_precision());
     let underlying_symbol = info
         .product_code
         .clone()
         .or_else(|| info.underlying.clone())
         .unwrap_or_else(|| info.symbol.clone());
-    Ok(DtcInstrument {
+    Ok(MarketInstrument {
         symbol: info.symbol,
         exchange: info.exchange,
         underlying_symbol,
@@ -642,7 +953,13 @@ fn dtc_instrument_from_rithmic(info: InstrumentInfo) -> Result<DtcInstrument, St
         price_display_format,
         currency_value_per_increment: (tick_size * point_value) as f32,
         contract_size: point_value as f32,
-        currency: info.currency.unwrap_or_else(|| "USD".to_owned()),
+        currency: info.currency.unwrap_or_default(),
+        expiration_date: info
+            .expiration_date
+            .as_deref()
+            .and_then(market_data::date_to_unix)
+            .unwrap_or(0),
+        exchange_symbol: info.exchange_symbol.unwrap_or_default(),
     })
 }
 
@@ -833,13 +1150,46 @@ async fn subscribe(
     symbol: &str,
     exchange: &str,
 ) -> Result<(), String> {
-    let response = handle
-        .subscribe(symbol, exchange)
+    let response = tokio::time::timeout(Duration::from_secs(5), handle.subscribe(symbol, exchange))
         .await
+        .map_err(|_| format!("Timed out subscribing to {symbol}.{exchange}"))?
         .map_err(|error| error.to_string())?;
-    response
-        .error
-        .map_or(Ok(()), |error| Err(error.to_string()))
+    if let Some(error) = response.error {
+        return Err(error.to_string());
+    }
+    // Statistics permissions can differ from Last/BBO permissions. Preserve
+    // the usable feed and leave unavailable statistics explicitly unset.
+    for result in [
+        tokio::time::timeout(
+            Duration::from_secs(3),
+            handle.subscribe_session_prices(symbol, exchange),
+        )
+        .await
+        .map_err(|_| "session-price subscription timed out".to_owned())
+        .and_then(|value| value.map_err(|error| error.to_string())),
+        tokio::time::timeout(
+            Duration::from_secs(3),
+            handle.subscribe_open_interest(symbol, exchange),
+        )
+        .await
+        .map_err(|_| "open-interest subscription timed out".to_owned())
+        .and_then(|value| value.map_err(|error| error.to_string())),
+        tokio::time::timeout(
+            Duration::from_secs(3),
+            handle.subscribe_end_of_day_prices(symbol, exchange),
+        )
+        .await
+        .map_err(|_| "end-of-day subscription timed out".to_owned())
+        .and_then(|value| value.map_err(|error| error.to_string())),
+    ] {
+        match result {
+            Ok(response) if response.error.is_none() => {}
+            result => eprintln!(
+                "[Feed] Optional session statistics unavailable for {symbol}.{exchange}: {result:?}"
+            ),
+        }
+    }
+    Ok(())
 }
 
 async fn unsubscribe(
@@ -847,13 +1197,120 @@ async fn unsubscribe(
     symbol: &str,
     exchange: &str,
 ) -> Result<(), String> {
-    let response = handle
-        .unsubscribe(symbol, exchange)
+    let mut first_error = None;
+    for result in [
+        tokio::time::timeout(Duration::from_secs(3), handle.unsubscribe(symbol, exchange))
+            .await
+            .map_err(|_| "market-data unsubscribe timed out".to_owned())
+            .and_then(|value| value.map_err(|error| error.to_string())),
+        tokio::time::timeout(
+            Duration::from_secs(3),
+            handle.unsubscribe_session_prices(symbol, exchange),
+        )
         .await
-        .map_err(|error| error.to_string())?;
-    response
-        .error
-        .map_or(Ok(()), |error| Err(error.to_string()))
+        .map_err(|_| "session-price unsubscribe timed out".to_owned())
+        .and_then(|value| value.map_err(|error| error.to_string())),
+        tokio::time::timeout(
+            Duration::from_secs(3),
+            handle.unsubscribe_open_interest(symbol, exchange),
+        )
+        .await
+        .map_err(|_| "open-interest unsubscribe timed out".to_owned())
+        .and_then(|value| value.map_err(|error| error.to_string())),
+        tokio::time::timeout(
+            Duration::from_secs(3),
+            handle.unsubscribe_end_of_day_prices(symbol, exchange),
+        )
+        .await
+        .map_err(|_| "end-of-day unsubscribe timed out".to_owned())
+        .and_then(|value| value.map_err(|error| error.to_string())),
+    ] {
+        let result = result.and_then(|r| r.error.map_or(Ok(()), |e| Err(e.to_string())));
+        if let Err(error) = result {
+            first_error.get_or_insert(error);
+        }
+    }
+    first_error.map_or(Ok(()), Err)
+}
+
+fn validate_subscription(
+    subscriptions: &HashMap<u32, (String, String)>,
+    symbol_id: u32,
+    symbol: &str,
+    exchange: &str,
+) -> Result<(), String> {
+    if subscriptions.contains_key(&symbol_id) {
+        return Err(format!("SymbolID {symbol_id} is already subscribed"));
+    }
+    if subscriptions
+        .values()
+        .any(|(s, e)| s.eq_ignore_ascii_case(symbol) && e.eq_ignore_ascii_case(exchange))
+    {
+        return Err("Symbol/Exchange already has a different SymbolID".to_owned());
+    }
+    Ok(())
+}
+
+async fn capture_market_snapshot(
+    handle: &RithmicTickerPlantHandle,
+    symbol: &str,
+    exchange: &str,
+    temporary: bool,
+) -> Result<MarketSnapshot, String> {
+    let mut receiver = handle.subscription_receiver.resubscribe();
+    let result = async {
+        subscribe(handle, symbol, exchange).await?;
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+        let mut quiet = deadline;
+        let mut seen = false;
+        let mut groups = 0_u8;
+        let mut snapshot = MarketSnapshot::default();
+        loop {
+            match tokio::time::timeout_at(quiet.min(deadline), receiver.recv()).await {
+                Ok(Ok(response)) => {
+                    if let Some(reason) = connection_loss_reason(&response) {
+                        return Err(reason);
+                    }
+                    if response.error.is_none()
+                        && market_data::key(&response.message) == Some((symbol, exchange))
+                    {
+                        snapshot.apply(&response.message);
+                        seen = true;
+                        let group = match &response.message {
+                            RithmicMessage::LastTrade(_) => 1,
+                            RithmicMessage::BestBidOffer(_) => 2,
+                            RithmicMessage::TradeStatistics(_) => 4,
+                            RithmicMessage::OpenInterest(_) => 8,
+                            RithmicMessage::EndOfDayPrices(_) => 16,
+                            _ => 0,
+                        };
+                        if groups & group == 0 {
+                            groups |= group;
+                            quiet = tokio::time::Instant::now() + Duration::from_millis(150);
+                        }
+                    }
+                }
+                Ok(Err(error)) => return Err(format!("Snapshot stream failed: {error}")),
+                Err(_) if seen => return Ok(snapshot),
+                Err(_) => return Err("No initial market snapshot received from Rithmic".to_owned()),
+            }
+            if tokio::time::Instant::now() >= deadline {
+                return if seen {
+                    Ok(snapshot)
+                } else {
+                    Err("No initial market snapshot received".to_owned())
+                };
+            }
+        }
+    }
+    .await;
+    if temporary || result.is_err() {
+        let cleanup = unsubscribe(handle, symbol, exchange).await;
+        if result.is_ok() {
+            cleanup?;
+        }
+    }
+    result
 }
 
 async fn forward_response(
@@ -1130,6 +1587,35 @@ fn parse_environment(value: &str) -> Result<RithmicEnv, FeedError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reference_metadata_preserves_expiry_and_does_not_invent_currency_or_value() {
+        let mut info = InstrumentInfo::default();
+        info.symbol = "ESU6".into();
+        info.exchange = "CME".into();
+        info.tick_size = Some(0.25);
+        info.expiration_date = Some("2026-09-18".into());
+        info.exchange_symbol = Some("EXCHANGE-ESU6".into());
+        let item = instrument_from_rithmic(info).unwrap();
+        assert_eq!(
+            item.expiration_date,
+            market_data::date_to_unix("20260918").unwrap()
+        );
+        assert_eq!(item.exchange_symbol, "EXCHANGE-ESU6");
+        assert!(item.currency.is_empty());
+        assert_eq!(item.contract_size, 0.0);
+        assert_eq!(item.currency_value_per_increment, 0.0);
+    }
+
+    #[test]
+    fn symbol_subscription_cannot_change_ids_until_unsubscribed() {
+        let mut subscriptions = HashMap::from([(7, ("ESU6".to_owned(), "CME".to_owned()))]);
+        assert!(validate_subscription(&subscriptions, 8, "ESU6", "CME").is_err());
+        assert!(validate_subscription(&subscriptions, 7, "NQU6", "CME").is_err());
+        assert!(validate_subscription(&subscriptions, 8, "NQU6", "CME").is_ok());
+        subscriptions.remove(&7);
+        assert!(validate_subscription(&subscriptions, 8, "ESU6", "CME").is_ok());
+    }
 
     #[test]
     fn converts_rithmic_epoch_parts_to_dtc_microseconds() {
