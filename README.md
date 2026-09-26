@@ -1,28 +1,24 @@
-# ODT Rithmic Gateway + Web Terminal
+# Rithmic DTC Gateway
 
-This repository is a Rust workspace containing two independently deployable
-applications:
+This repository contains the dedicated Rithmic gateway. It owns the server
+market-data account, history cache, optional Paper trading routes, and exposes
+the standard DTC binary protocol to downstream applications.
 
-- `dtc_server` is the Rithmic gateway. It owns the server market-data account,
-  history cache, optional per-member Paper trading routes, and exposes only the
-  standard DTC binary protocol to downstream applications.
-- `rithmic-web-terminal` is the member-facing Web application. It depends on the
-  gateway through DTC for live quotes, depth, history, accounts, and Paper order
-  routing; it never receives the server's Rithmic credentials.
+The companion Web client lives at
+[`MagicMarvel/rithmic-web-terminal`](https://github.com/MagicMarvel/rithmic-web-terminal)
+and communicates with this service only through DTC and the private account
+administration endpoint.
 
-The production deployment uses `deploy/compose.yaml`. Only Web port 11200 is
-bound to loopback for the TLS proxy; DTC and its private admin API stay on the
-Compose network. No database is required. Runtime state is kept in bind-mounted
-`data/gateway` and `data/web` directories.
+The production deployment uses `deploy/compose.yaml`. DTC and its private admin
+API are bound to loopback by default. No database is required; runtime state is
+kept in `deploy/data/gateway`.
 
 ```powershell
 Copy-Item deploy/gateway.env.example deploy/gateway.env
-Copy-Item deploy/web.env.example deploy/web.env
 docker compose -f deploy/compose.yaml up -d
 ```
 
-Build definitions are in `docker/gateway.Dockerfile` and
-`docker/web.Dockerfile`.
+The container build is defined by the root `Dockerfile`.
 
 A local Rust bridge from Rithmic to Sierra Chart. It uses
 [`rithmic-rs`](https://crates.io/crates/rithmic-rs) for upstream connectivity and
@@ -187,108 +183,11 @@ appear in Sierra's `Other` category because core DTC security definitions do not
 carry Sierra-specific category and rollover rules; this does not prevent charts,
 market depth, or historical requests from using them.
 
-## Rithmic Flow web terminal
+## Web terminal
 
-The repository also includes a browser terminal using TradingView Lightweight
-Charts 5.2.1. Real-time market data and history always come from the server's
-Rithmic connection. A separate, optional user connection handles Paper orders,
-accounts, positions, and P/L. The terminal supports ES, NQ, and GC tabs,
-minute-bar history, live candles, best bid/ask, aggregated depth, Paper order
-entry, positions, working orders, and cancel requests. Start it with:
+The member-facing terminal has moved to
+[`MagicMarvel/rithmic-web-terminal`](https://github.com/MagicMarvel/rithmic-web-terminal).
 
-```powershell
-$env:DTC_GATEWAY_ADDR = "127.0.0.1:11099"
-cargo run -p rithmic-web-terminal
-```
-
-The default URL is `http://127.0.0.1:11200/`; override it with
-`TERMINAL_HTTP_LISTEN_ADDR`. Every terminal API, including the live WebSocket,
-history, and order routes, requires a valid member session. Configure one member
-with `TERMINAL_MEMBER_USER` and `TERMINAL_MEMBER_PASSWORD`, or multiple members
-with `TERMINAL_MEMBERS_JSON`. Each JSON entry accepts `username`, `password`,
-optional `active`, and optional Unix `expiresAt`. If no members are configured,
-the server fails closed and the terminal shows a configuration message instead
-of returning market data. Sessions use an HttpOnly, SameSite=Strict cookie and
-default to 12 hours (`TERMINAL_MEMBER_SESSION_SECS`); set
-`TERMINAL_COOKIE_SECURE=true` behind HTTPS. The built-in account source is
-intended for a private deployment; use TLS and a proper membership service or
-reverse proxy before exposing the terminal publicly. Set the Rithmic
-environment variables in `.env` first. `RITHMIC_ENABLE_TRADING=true` enables
-the existing Paper-only trading plant; otherwise the order ticket remains
-read-only. The frontend asks for an explicit confirmation before every order.
-
-Configuring a personal order account without restarting: the `下单账号` button in the
-top bar opens a drawer with the environment (Paper Trading, Live, Test), the
-system name (`Rithmic Paper Trading`, `Rithmic 01`, or a prop-firm system such
-as `Apex` or `TopstepTrader`), the user, password, Paper Account/FCM/IB IDs, and
-gateway URLs. `测试登录` logs in on a throwaway socket, reports which systems the
-gateway offers, and does not disturb the server data feeds. `保存并连接下单`
-establishes a replacement Paper order connection (when trading is enabled) and
-atomically replaces only the order client. It never reloads, clears, or
-reconnects market/history data. A failed replacement leaves the old order
-account active. When `保存下单连接` is checked, the settings are written to
-`data/rithmic-trading-connection.json` (override with
-`RITHMIC_TRADING_CONNECTION_FILE`) so the terminal keeps using that order
-account after a restart. `清除下单连接` returns the terminal to read-only mode
-without affecting the chart. The drawer can also keep several account profiles in the
-browser's local storage for one-click switching; passwords are only stored
-there when explicitly confirmed. The endpoints are `GET/POST /api/connection`,
-`POST /api/connection/test`, and `POST /api/connection/reset`, and the response
-never includes the password or the server data credentials. The server data
-connection, DTC server, and probes keep reading the environment only.
-
-Chart toolbar features:
-
-- **History download by days.** The `天数` box next to the period buttons
-  selects how many calendar days (1-3650) of history to load; `下载` forces a
-  refresh (`/api/history?...&days=N&refresh=1`). Browser charts use only the
-  Rithmic History Plant and a separate local Rithmic cache; there is no public
-  market-data fallback. The chosen day count is remembered per browser.
-- **Footprint chart.** The `足迹图` chart type requests raw Rithmic trades and
-  displays price-level Bid x Ask volume, per-bar delta, and the point of control.
-  Live Rithmic trades update the open footprint bar in real time.
-- **Large-order indicator.** Enable `大单成交` from `指标` and open its settings
-  to choose the minimum individual Rithmic trade size, buy/sell colors, and
-  labels. Historical time, Tick, and Range bars retain the largest individual
-  Bid/Ask trade at every price level instead of treating aggregate bar volume as
-  one order.
-- **Anchored VWAP.** `VWAP` supports Session (configurable New York session
-  start), week, month, year, first visible bar, and a custom date/time anchor,
-  plus HLC3/OHLC4/Close source, color, and line width settings.
-- **Drawing tools.** `趋势线` places a line with two chart clicks. `VP` selects a
-  fixed time range and draws its volume-by-price profile and POC. Drawings are
-  saved per symbol in browser storage; `清除` removes the current symbol's
-  drawings.
-- **Mobile landscape layout.** On phones and small tablets used sideways, the
-  chart fills the first viewport, the dense toolbar becomes touch-scrollable,
-  and order entry, depth, positions, orders, and statistics stack vertically
-  below it. Safe-area insets and short landscape login/settings views are
-  handled explicitly.
-- **Time-axis zone switch.** The `纽约 / 北京` toggle at the bottom-right of the
-  chart re-labels the time axis, crosshair, and feed timestamps in
-  `America/New_York` or `Asia/Shanghai`. The choice is remembered per browser.
- - **Indicator menu (`指标`).** The only chart overlay is the MenthorQ intraday
-   levels (`MQ`), toggled from the `基础叠加` group in the `指标` dropdown.
-   Ticking `MQ` loads the current contract's levels when an API key is saved in
-   `MQ 设置`, otherwise it opens that drawer. The choice is remembered per
-   browser. The MenthorQ API key lives only in the browser's local storage and
-   in the `MQ 设置` drawer you type into; it is never written to any file in
-   this project, so every recipient has to paste their own key.
-
-Run the credentialed Paper Trading end-to-end tests one at a time with:
-
-```powershell
-cargo test --test dtc_live paper_trading_es_flows_through_dtc_wire -- --ignored --nocapture
-cargo test --test dtc_live paper_trading_es_dbo_flows_as_aggregated_dtc_l2 -- --ignored --nocapture
-cargo test --test dtc_live paper_trading_dynamic_multi_symbol_market_data_flows_through_dtc_wire -- --ignored --nocapture
-```
-
-The first test passes only after receiving a real-time Trade V2 and Best Bid/Ask
-V2 message over the DTC wire, including a classified at-bid/at-ask trade. The
-second requests the same 1400 depth levels observed from Sierra Chart and passes
-only after receiving an aggregated bid/ask snapshot followed by a live L2 update.
-Running them separately avoids opening two concurrent Rithmic sessions for the
-same trial account.
 
 ## Historical data
 
