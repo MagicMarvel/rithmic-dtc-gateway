@@ -2,16 +2,75 @@ use std::{env, error::Error, sync::Arc};
 
 use rithmic_dtc_bridge::{
     dtc,
+    dtc_accounts::{DtcAccountAdmin, DtcAccounts},
     history_feed::RithmicHistoryFeed,
     identity::synthetic_mac,
-    options::{OptionsConfig, OptionsService},
     rithmic_feed::RithmicFeed,
     trading_feed::RithmicTradingFeed,
 };
+use rithmic_rs::RithmicEnv;
 use tokio::net::TcpListener;
 
 const DEFAULT_LISTEN_ADDRESS: &str = "127.0.0.1:11099";
 
+#[derive(Clone)]
+struct DtcServices {
+    market: Arc<RithmicFeed>,
+    history: Arc<RithmicHistoryFeed>,
+    trading: Option<Arc<RithmicTradingFeed>>,
+}
+
+const HISTORY_STARTUP_BUDGET: std::time::Duration = std::time::Duration::from_secs(20);
+
+async fn connect_dtc_services(accounts: &DtcAccounts) -> Result<DtcServices, String> {
+    let market_config = accounts.market.config()?;
+    let market = Arc::new(
+        RithmicFeed::connect(market_config.clone())
+            .await
+            .map_err(|e| e.to_string())?,
+    );
+    let history = match tokio::time::timeout(
+        HISTORY_STARTUP_BUDGET,
+        RithmicHistoryFeed::connect(market_config.clone()),
+    )
+    .await
+    {
+        Ok(Ok(feed)) => feed,
+        Ok(Err(error)) => {
+            eprintln!("[History] {error}; using lazy History Plant connection");
+            RithmicHistoryFeed::pending(market_config)
+                .await
+                .map_err(|e| e.to_string())?
+        }
+        Err(_) => {
+            eprintln!(
+                "[History] unavailable within {}s; using lazy History Plant connection",
+                HISTORY_STARTUP_BUDGET.as_secs()
+            );
+            RithmicHistoryFeed::pending(market_config)
+                .await
+                .map_err(|e| e.to_string())?
+        }
+    };
+    let trading = if accounts.trading_enabled {
+        let config = accounts.trading.login.config()?;
+        if config.env != RithmicEnv::Demo {
+            return Err("交易账号只允许 demo/Paper 环境".to_owned());
+        }
+        Some(Arc::new(
+            RithmicTradingFeed::connect(config, accounts.trading.account()?)
+                .await
+                .map_err(|e| e.to_string())?,
+        ))
+    } else {
+        None
+    };
+    Ok(DtcServices {
+        market,
+        history: Arc::new(history),
+        trading,
+    })
+}
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenvy::dotenv().ok();
@@ -20,71 +79,75 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let exchange =
         env::var("RITHMIC_DTC_EXCHANGE").or_else(|_| env::var("RITHMIC_PROBE_EXCHANGE"))?;
     let instrument = dtc::Instrument::es(symbol, exchange)?;
-    let options_enabled = env::var("RITHMIC_ENABLE_OPTIONS").is_ok_and(|value| {
-        matches!(
-            value.trim().to_ascii_lowercase().as_str(),
-            "1" | "true" | "yes"
-        )
+    let admin = DtcAccountAdmin::load()?;
+    let mut account_updates = admin.subscribe();
+    let admin_server = admin.clone();
+    tokio::spawn(async move {
+        if let Err(error) = admin_server.serve().await {
+            eprintln!("[DTC Admin] stopped: {error}");
+        }
     });
-    let options = if options_enabled {
-        let configs = OptionsConfig::markets_from_env()?;
-        let service = Arc::new(OptionsService::prepare(&configs)?);
-        let http_service = Arc::clone(&service);
-        tokio::spawn(async move {
-            if let Err(error) = http_service.serve().await {
-                eprintln!("[Options] HTTP service stopped: {error}");
-            }
-        });
-        Some((service, configs))
-    } else {
-        None
+    let mut services = match connect_dtc_services(&admin.config()).await {
+        Ok(value) => {
+            admin.set_status("账号已连接");
+            Some(value)
+        }
+        Err(error) => {
+            admin.set_status(format!("连接失败：{error}"));
+            eprintln!("[DTC] initial accounts unavailable: {error}");
+            None
+        }
     };
-    let feed = RithmicFeed::connect_from_env().await?;
-    let history_feed = RithmicHistoryFeed::connect_from_env().await?;
-    println!(
-        "Rithmic login accepted; serving {}.{}",
-        instrument.symbol, instrument.exchange
-    );
-
-    if let Some((service, configs)) = options {
-        let options_feed = RithmicFeed::connect_from_env().await?;
-        let options_client = options_feed.client();
-        let option_markets = configs
-            .into_iter()
-            .map(|config| (history_feed.client(), config))
-            .collect();
-        service.start_collector(options_client, option_markets);
-    }
-
     let address = env::var("DTC_LISTEN_ADDR").unwrap_or_else(|_| DEFAULT_LISTEN_ADDRESS.to_owned());
     let listener = TcpListener::bind(&address).await?;
     let actual_address = listener.local_addr()?;
     println!("DTC binary market-data server listening on {actual_address}");
-    let market_factory = std::sync::Arc::new(move || feed.client());
-    let history_factory = std::sync::Arc::new(move || history_feed.client());
-    let trading_enabled = env::var("RITHMIC_ENABLE_TRADING").is_ok_and(|value| {
-        matches!(
-            value.trim().to_ascii_lowercase().as_str(),
-            "1" | "true" | "yes"
-        )
-    });
-    if trading_enabled {
-        let trading_feed = RithmicTradingFeed::connect_from_env().await?;
-        println!(
-            "Aggregated L2, historical data, and Paper-only single-order trading are enabled."
-        );
-        let trading_factory = std::sync::Arc::new(move || trading_feed.client());
-        dtc::serve_with_trading(
-            listener,
-            instrument,
-            market_factory,
-            history_factory,
-            trading_factory,
-        )
-        .await?;
-    } else {
-        println!("Aggregated L2 and historical price data are enabled; trading remains disabled.");
-        dtc::serve(listener, instrument, market_factory, history_factory).await?;
+    let (generation, _) = tokio::sync::watch::channel(0_u64);
+    loop {
+        tokio::select! {
+            accepted = listener.accept() => {
+                let (stream, peer) = accepted?;
+                stream.set_nodelay(true)?;
+                let active = services.clone();
+                let instrument = instrument.clone();
+                let mut changed = generation.subscribe();
+                tokio::spawn(async move {
+                    println!("[DTC] Client connected: {peer}");
+                    let session = dtc::handle_connection_with_all_services(
+                        stream,
+                        instrument,
+                        active.as_ref().map(|v| v.market.client()),
+                        active.as_ref().map(|v| v.history.client()),
+                        active.as_ref().and_then(|v| v.trading.as_ref().map(|t| t.client())),
+                    );
+                    tokio::select! {
+                        result = session => {
+                            if let Err(error) = result {
+                                eprintln!("[DTC] Session {peer} ended: {error}");
+                            }
+                        }
+                        _ = changed.changed() => {
+                            println!("[DTC] Account route changed; reconnecting {peer}");
+                        }
+                    }
+                });
+            }
+            changed = account_updates.changed() => {
+                if changed.is_err() {
+                    continue;
+                }
+                let next = account_updates.borrow_and_update().clone();
+                match connect_dtc_services(&next).await {
+                    Ok(value) => {
+                        services = Some(value);
+                        admin.set_status("切换成功，DTC 客户端正在重连");
+                        generation.send_replace(*generation.borrow() + 1);
+                    }
+                    Err(error) => {
+                        admin.set_status(format!("切换失败，继续使用原账号：{error}"));
+                    }
+                }
+            }
+        }
     }
-    Ok(())
 }

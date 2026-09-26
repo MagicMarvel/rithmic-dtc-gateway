@@ -64,25 +64,6 @@ impl Instrument {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum OptionType {
-    Call,
-    Put,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct OptionContract {
-    pub symbol: String,
-    pub exchange: String,
-    pub underlying: String,
-    pub expiration: String,
-    pub strike: f64,
-    pub option_type: OptionType,
-    pub multiplier: f64,
-    pub tick_size: Option<f64>,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum MarketEvent {
     Snapshot {
@@ -130,12 +111,6 @@ pub enum MarketEvent {
 
 #[derive(Debug)]
 pub(crate) enum MarketCommand {
-    DiscoverOptions {
-        underlying: String,
-        exchange: String,
-        expiration: Option<String>,
-        response: oneshot::Sender<Result<Vec<OptionContract>, String>>,
-    },
     LoadCatalog {
         preferred_underlying: String,
         response: oneshot::Sender<Result<Vec<Instrument>, String>>,
@@ -202,6 +177,13 @@ pub struct MarketDataClient {
     pub(crate) publish_catalog_at_logon: bool,
 }
 
+/// Commands the terminal and the DTC server issue without owning the event
+/// stream. Cloning only clones the command channel.
+#[derive(Clone)]
+pub(crate) struct MarketControl {
+    commands: mpsc::Sender<MarketCommand>,
+}
+
 impl MarketDataClient {
     pub(crate) fn new(
         commands: mpsc::Sender<MarketCommand>,
@@ -225,28 +207,18 @@ impl MarketDataClient {
         }
     }
 
-    pub(crate) async fn discover_options(
-        &self,
-        underlying: &str,
-        exchange: &str,
-        expiration: Option<String>,
-    ) -> Result<Vec<OptionContract>, String> {
-        let (response, receiver) = oneshot::channel();
-        self.commands
-            .send(MarketCommand::DiscoverOptions {
-                underlying: underlying.to_owned(),
-                exchange: exchange.to_owned(),
-                expiration,
-                response,
-            })
-            .await
-            .map_err(|_| "Rithmic market gateway stopped".to_owned())?;
-        receiver
-            .await
-            .map_err(|_| "Rithmic option discovery response was dropped".to_owned())?
+    pub(crate) fn split(self) -> (MarketControl, mpsc::Receiver<MarketEvent>) {
+        (
+            MarketControl {
+                commands: self.commands,
+            },
+            self.events,
+        )
     }
+}
 
-    pub(crate) async fn subscribe_raw(
+impl MarketControl {
+    pub(crate) async fn subscribe(
         &self,
         symbol_id: u32,
         symbol: &str,
@@ -264,11 +236,54 @@ impl MarketDataClient {
             .map_err(|_| "Rithmic market gateway stopped".to_owned())?;
         receiver
             .await
-            .map_err(|_| "Rithmic subscription response was dropped".to_owned())?
+            .map_err(|_| "subscription response dropped".to_owned())?
     }
 
-    pub(crate) async fn next_raw_event(&mut self) -> Option<MarketEvent> {
-        self.events.recv().await
+    /// One-shot snapshot of an already subscribed symbol: served from the
+    /// in-memory state without an upstream round trip, which is what a browser
+    /// reload or a second tab needs.
+    pub(crate) async fn snapshot(
+        &self,
+        symbol: &str,
+        exchange: &str,
+    ) -> Result<MarketSnapshot, String> {
+        let (response, receiver) = oneshot::channel();
+        self.commands
+            .send(MarketCommand::Snapshot {
+                symbol: symbol.to_owned(),
+                exchange: exchange.to_owned(),
+                response,
+            })
+            .await
+            .map_err(|_| "Rithmic market gateway stopped".to_owned())?;
+        receiver
+            .await
+            .map_err(|_| "snapshot response dropped".to_owned())?
+    }
+
+    pub(crate) async fn subscribe_depth(
+        &self,
+        symbol_id: u32,
+        symbol: &str,
+        exchange: &str,
+        tick_size: f64,
+        max_levels: usize,
+    ) -> Result<Vec<DepthLevel>, String> {
+        let (response, receiver) = oneshot::channel();
+        self.commands
+            .send(MarketCommand::SubscribeDepth {
+                symbol_id,
+                symbol: symbol.to_owned(),
+                exchange: exchange.to_owned(),
+                tick_size,
+                max_levels,
+                response,
+            })
+            .await
+            .map_err(|_| "Rithmic depth gateway stopped".to_owned())?;
+        receiver
+            .await
+            .map_err(|_| "depth subscription response dropped".to_owned())?
     }
 }
 
@@ -281,6 +296,9 @@ pub struct HistoricalRequest {
     pub start_time: i64,
     pub end_time: i64,
     pub max_days: u32,
+    /// When greater than 1, request Rithmic tick bars aggregating this many
+    /// trades per bar instead of time bars or raw ticks.
+    pub tick_bar_length: u32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -323,6 +341,7 @@ pub struct HistoricalResponse {
     pub is_final: bool,
 }
 
+#[derive(Clone)]
 pub struct HistoryDataClient {
     pub(crate) commands: mpsc::Sender<(
         HistoricalRequest,
@@ -344,15 +363,29 @@ impl HistoryDataClient {
         &self,
         request: HistoricalRequest,
     ) -> Result<Vec<HistoricalRecord>, String> {
+        self.load_with_progress(request, |_, _| {}).await
+    }
+
+    /// Like [`load`](Self::load) but calls `on_batch(batches_received,
+    /// records_so_far)` after every batch the worker sends, which is one per
+    /// request chunk (see `history_feed::split_history_request`).
+    pub(crate) async fn load_with_progress(
+        &self,
+        request: HistoricalRequest,
+        mut on_batch: impl FnMut(usize, usize),
+    ) -> Result<Vec<HistoricalRecord>, String> {
         let (response_tx, mut response_rx) = mpsc::channel(8);
         self.commands
             .send((request, response_tx))
             .await
             .map_err(|_| "Rithmic history worker stopped".to_owned())?;
         let mut records = Vec::new();
+        let mut batches = 0usize;
         while let Some(response) = response_rx.recv().await {
             let response = response?;
             records.extend(response.records);
+            batches += 1;
+            on_batch(batches, records.len());
             if response.is_final {
                 return Ok(records);
             }
@@ -417,7 +450,7 @@ pub struct AccountBalance {
     pub trading_disabled: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NewOrderRequest {
     pub symbol: String,
     pub exchange: String,
@@ -432,7 +465,7 @@ pub struct NewOrderRequest {
     pub is_automated: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ModifyOrderRequest {
     pub server_order_id: String,
     pub client_order_id: String,
@@ -443,7 +476,7 @@ pub struct ModifyOrderRequest {
     pub time_in_force: i32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CancelOrderRequest {
     pub server_order_id: String,
     pub client_order_id: String,
@@ -478,12 +511,80 @@ pub struct TradingDataClient {
     pub(crate) events: mpsc::Receiver<TradingEvent>,
 }
 
+#[derive(Clone)]
+pub(crate) struct TradingControl {
+    commands: mpsc::Sender<TradingCommand>,
+}
+
 impl TradingDataClient {
     pub(crate) fn new(
         commands: mpsc::Sender<TradingCommand>,
         events: mpsc::Receiver<TradingEvent>,
     ) -> Self {
         Self { commands, events }
+    }
+
+    pub(crate) fn split(self) -> (TradingControl, mpsc::Receiver<TradingEvent>) {
+        (
+            TradingControl {
+                commands: self.commands,
+            },
+            self.events,
+        )
+    }
+}
+
+impl TradingControl {
+    pub(crate) async fn accounts(&self) -> Result<Vec<TradeAccount>, String> {
+        let (tx, rx) = oneshot::channel();
+        self.commands
+            .send(TradingCommand::Accounts(tx))
+            .await
+            .map_err(|_| "trading service stopped".to_owned())?;
+        rx.await
+            .map_err(|_| "account response dropped".to_owned())?
+    }
+    pub(crate) async fn open_orders(&self) -> Result<Vec<TradingOrder>, String> {
+        let (tx, rx) = oneshot::channel();
+        self.commands
+            .send(TradingCommand::OpenOrders(tx))
+            .await
+            .map_err(|_| "trading service stopped".to_owned())?;
+        rx.await.map_err(|_| "orders response dropped".to_owned())?
+    }
+    pub(crate) async fn positions(&self) -> Result<Vec<TradingPosition>, String> {
+        let (tx, rx) = oneshot::channel();
+        self.commands
+            .send(TradingCommand::Positions(tx))
+            .await
+            .map_err(|_| "trading service stopped".to_owned())?;
+        rx.await
+            .map_err(|_| "positions response dropped".to_owned())?
+    }
+    pub(crate) async fn balance(&self) -> Result<AccountBalance, String> {
+        let (tx, rx) = oneshot::channel();
+        self.commands
+            .send(TradingCommand::Balance(tx))
+            .await
+            .map_err(|_| "trading service stopped".to_owned())?;
+        rx.await
+            .map_err(|_| "balance response dropped".to_owned())?
+    }
+    pub(crate) async fn submit(&self, request: NewOrderRequest) -> Result<(), String> {
+        let (tx, rx) = oneshot::channel();
+        self.commands
+            .send(TradingCommand::Submit(request, tx))
+            .await
+            .map_err(|_| "trading service stopped".to_owned())?;
+        rx.await.map_err(|_| "submit response dropped".to_owned())?
+    }
+    pub(crate) async fn cancel(&self, request: CancelOrderRequest) -> Result<(), String> {
+        let (tx, rx) = oneshot::channel();
+        self.commands
+            .send(TradingCommand::Cancel(request, tx))
+            .await
+            .map_err(|_| "trading service stopped".to_owned())?;
+        rx.await.map_err(|_| "cancel response dropped".to_owned())?
     }
 }
 

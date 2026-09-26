@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DTC 账户路由</title><style>
+:root{color-scheme:dark;--bg:#070a10;--panel:#0d121b;--line:#243044;--text:#e8eef8;--muted:#8794a8;--cyan:#2de0ee;--green:#3de09d;--red:#ff6b7a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#112238 0,transparent 32%),var(--bg);color:var(--text);font:14px system-ui,sans-serif}
+main{max-width:1120px;margin:auto;padding:28px}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}h1{font-size:22px;margin:0}small,.hint{color:var(--muted)}
+.status{padding:9px 13px;border:1px solid #215d50;border-radius:999px;color:var(--green);background:#0b251f}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:linear-gradient(145deg,#111824,#0b1018);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 18px 50px #0005}
+h2{font-size:16px;margin:0 0 4px}.role{color:var(--cyan);font:12px ui-monospace,monospace;margin-bottom:18px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wide{grid-column:1/-1}label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+input,select{width:100%;height:39px;border:1px solid var(--line);border-radius:7px;background:#080d14;color:var(--text);padding:0 10px;outline:none}input:focus,select:focus{border-color:#2aaeba}
+.actions{display:flex;align-items:center;gap:12px;margin-top:18px}button{height:42px;padding:0 20px;border:1px solid #168b97;border-radius:8px;background:#0d3940;color:#7ff6ff;font-weight:700;cursor:pointer}
+button:disabled{opacity:.45}.toggle{display:flex;align-items:center;gap:8px;margin:12px 0}.toggle input{width:auto;height:auto}.message{min-height:20px;color:var(--muted)}.error{color:var(--red)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);padding:24px;width:min(420px,90vw)}dialog input{margin:12px 0}
+@media(max-width:820px){.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.wide{grid-column:auto}}
+</style></head><body>
+<main><header><div><h1>DTC 账户路由</h1><small>行情与交易连接相互独立 · 仅影响 DTC</small></div><div id="status" class="status">读取状态…</div></header>
+<div class="grid">
+<section class="card"><h2>行情账号</h2><div class="role">MARKET DATA + HISTORY</div><div id="market" class="fields"></div></section>
+<section class="card"><h2>交易账号</h2><div class="role">ORDER + PNL · PAPER ONLY</div><label class="toggle"><input id="trading_enabled" type="checkbox">启用 DTC 模拟交易</label><div id="trading" class="fields"></div></section>
+</div>
+<div class="actions"><button id="save">保存并切换</button><span id="message" class="message">密码留空表示保持原密码。</span></div>
+</main>
+<dialog id="login"><form method="dialog"><h2>管理员验证</h2><p class="hint">输入启动日志中的 DTC Admin Token。</p><input id="token" type="password" autocomplete="current-password" placeholder="32+ characters"><button id="loginBtn">进入</button></form></dialog>
+<script>
+const fields=[
+ ['label','显示名称'],['environment','环境','select'],['user','登录用户名'],['password','密码','password'],
+ ['url','主 WebSocket URL','wide'],['beta_url','备用 WebSocket URL','wide'],['system_name','System Name'],
+ ['app_name','App Name'],['app_version','App Version']
+];
+const tradingExtra=[['account_id','Account ID'],['fcm_id','FCM ID'],['ib_id','IB ID']];
+const $=id=>document.getElementById(id);let cfg,token=sessionStorage.getItem('dtcAdminToken')||'';
+function input(root,key,label,type){const box=document.createElement('div');if(type==='wide')box.className='wide';const l=document.createElement('label');l.textContent=label;let el;
+ if(type==='select'){el=document.createElement('select');for(const v of ['demo','live','test']){const o=document.createElement('option');o.value=v;o.textContent=v;el.append(o)}}else{el=document.createElement('input');el.type=type==='password'?'password':'text';if(type==='password')el.placeholder='留空保持不变'}
+ el.id=root+'_'+key;box.append(l,el);$(root).append(box)}
+for(const f of fields){input('market',...f);input('trading',...f)}for(const f of tradingExtra)input('trading',...f);
+async function api(path,opt={}){opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token};const r=await fetch(path,opt);if(r.status===401){$('login').showModal();throw Error('需要管理员令牌')}if(!r.ok)throw Error(await r.text());return r.json()}
+function setLogin(root,data){for(const [key,,type] of fields){const el=$(root+'_'+key);if(type!=='password')el.value=data[key]||''}}
+function getLogin(root,old){const out={};for(const [key,,type] of fields)out[key]=type==='password'?$(root+'_'+key).value:$(root+'_'+key).value.trim();return out}
+async function load(){cfg=await api('/api/config');setLogin('market',cfg.market);setLogin('trading',cfg.trading);for(const [k] of tradingExtra)$('trading_'+k).value=cfg.trading[k]||'';$('trading_enabled').checked=cfg.trading_enabled;await status()}
+async function status(){try{const s=await api('/api/status');$('status').textContent=s.status}catch{}}
+$('loginBtn').onclick=async e=>{e.preventDefault();token=$('token').value;sessionStorage.setItem('dtcAdminToken',token);$('login').close();try{await load()}catch(e){$('message').textContent=e.message;$('message').className='message error'}};
+$('save').onclick=async()=>{const b=$('save');b.disabled=true;try{const trading=getLogin('trading',cfg.trading);for(const [k] of tradingExtra)trading[k]=$('trading_'+k).value.trim();const next={market:getLogin('market',cfg.market),trading_enabled:$('trading_enabled').checked,trading};await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)});$('message').textContent='已保存，正在验证并切换；Sierra 将自动重连。';$('message').className='message';setTimeout(status,500)}catch(e){$('message').textContent=e.message;$('message').className='message error'}finally{b.disabled=false}};
+if(token)load().catch(()=>$('login').showModal());else $('login').showModal();setInterval(status,3000);
+</script></body></html>

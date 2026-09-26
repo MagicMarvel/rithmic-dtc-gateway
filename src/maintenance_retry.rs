@@ -1,7 +1,11 @@
 use std::{env, time::Duration};
 
-const DEFAULT_INITIAL_SECS: u64 = 30;
-const DEFAULT_MAX_SECS: u64 = 15 * 60;
+/// A rejected login is usually the account's concurrent-session limit: the slot
+/// of a process that was stopped a moment ago is still held server-side and is
+/// released after a few minutes. A short first retry recovers from that quickly,
+/// and the low cap keeps a longer outage from turning into quarter-hour waits.
+const DEFAULT_INITIAL_SECS: u64 = 10;
+const DEFAULT_MAX_SECS: u64 = 120;
 
 pub(crate) struct MaintenanceBackoff {
     delay: Duration,
@@ -45,6 +49,11 @@ impl MaintenanceBackoff {
             self.attempts,
             self.delay.as_secs()
         );
+        if error.to_ascii_lowercase().contains("permission denied") {
+            eprintln!(
+                "[{subsystem}] Hint: this account allows only a limited number of concurrent Rithmic sessions. Close other Rithmic software, or wait for the session of a recently stopped process to expire; the retry continues automatically."
+            );
+        }
         tokio::time::sleep(self.delay).await;
         self.delay = self.delay.saturating_mul(2).min(self.maximum);
     }

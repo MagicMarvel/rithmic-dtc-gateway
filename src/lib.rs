@@ -1,10 +1,12 @@
+pub mod connection;
 pub mod dtc;
+pub mod dtc_accounts;
 pub mod history_feed;
 pub mod identity;
 mod maintenance_retry;
 pub mod market_data;
 pub mod market_gateway;
-pub mod options;
 pub mod order_book;
 pub mod rithmic_feed;
+pub mod terminal;
 pub mod trading_feed;

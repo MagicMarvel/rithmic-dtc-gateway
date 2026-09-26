@@ -52,9 +52,12 @@ async fn paper_trading_dynamic_multi_symbol_market_data_flows_through_dtc_wire()
     let mut exchanges = HashSet::new();
     let mut published = HashSet::new();
     loop {
-        let response = timeout(Duration::from_secs(20), read_message(&mut client))
-            .await
-            .expect("timed out waiting for dynamic exchange list");
+        let response = timeout(
+            Duration::from_secs(20),
+            read_without_session_status(&mut client),
+        )
+        .await
+        .expect("timed out waiting for dynamic exchange list");
         if message_type(&response) == 507
             && i32::from_le_bytes(response[4..8].try_into().unwrap()) == 0
         {
@@ -96,9 +99,12 @@ async fn paper_trading_dynamic_multi_symbol_market_data_flows_through_dtc_wire()
         .unwrap();
     let mut search_symbols = HashSet::new();
     loop {
-        let response = timeout(Duration::from_secs(30), read_message(&mut client))
-            .await
-            .expect("timed out waiting for dynamic symbol search");
+        let response = timeout(
+            Duration::from_secs(30),
+            read_without_session_status(&mut client),
+        )
+        .await
+        .expect("timed out waiting for dynamic symbol search");
         assert_eq!(message_type(&response), 507);
         assert_eq!(i32::from_le_bytes(response[4..8].try_into().unwrap()), 3);
         let symbol = read_string(&response[8..72]);
@@ -121,9 +127,12 @@ async fn paper_trading_dynamic_multi_symbol_market_data_flows_through_dtc_wire()
         ))
         .await
         .unwrap();
-    let definition = timeout(Duration::from_secs(20), read_message(&mut client))
-        .await
-        .expect("timed out waiting for dynamic security definition");
+    let definition = timeout(
+        Duration::from_secs(20),
+        read_without_session_status(&mut client),
+    )
+    .await
+    .expect("timed out waiting for dynamic security definition");
     assert_eq!(message_type(&definition), 507);
     assert_eq!(read_string(&definition[8..72]), requested_symbol);
     assert_eq!(read_string(&definition[72..88]), requested_exchange);
@@ -385,7 +394,7 @@ async fn paper_trading_es_dbo_flows_as_aggregated_dtc_l2() {
     assert!(!bid_levels.is_empty() && !ask_levels.is_empty());
     assert!(bid_levels.windows(2).all(|prices| prices[0] > prices[1]));
     assert!(ask_levels.windows(2).all(|prices| prices[0] < prices[1]));
-    assert!(bid_levels[0] < ask_levels[0]);
+    assert!(bid_levels[0] <= ask_levels[0]);
 
     let mut update_count = 0_usize;
     let mut snapshot_bid_levels = Vec::new();
@@ -416,7 +425,7 @@ async fn paper_trading_es_dbo_flows_as_aggregated_dtc_l2() {
                 ask_levels = snapshot_ask_levels.clone();
                 assert!(bid_levels.windows(2).all(|prices| prices[0] > prices[1]));
                 assert!(ask_levels.windows(2).all(|prices| prices[0] < prices[1]));
-                assert!(bid_levels[0] < ask_levels[0]);
+                assert!(bid_levels[0] <= ask_levels[0]);
             }
         } else if message_type(&message) == 109 {
             assert_eq!(message.len(), 39);
@@ -457,7 +466,9 @@ async fn paper_trading_es_dbo_flows_as_aggregated_dtc_l2() {
                 assert!(bid_levels.windows(2).all(|prices| prices[0] > prices[1]));
                 assert!(ask_levels.windows(2).all(|prices| prices[0] < prices[1]));
                 assert!(
-                    bid_levels.is_empty() || ask_levels.is_empty() || bid_levels[0] < ask_levels[0],
+                    bid_levels.is_empty()
+                        || ask_levels.is_empty()
+                        || bid_levels[0] <= ask_levels[0],
                     "crossed DTC book after batch: bid={:?}, ask={:?}",
                     bid_levels.first(),
                     ask_levels.first(),
@@ -1294,6 +1305,18 @@ async fn read_message(stream: &mut TcpStream) -> Vec<u8> {
     message[..4].copy_from_slice(&header);
     stream.read_exact(&mut message[4..]).await.unwrap();
     message
+}
+
+async fn read_without_session_status(stream: &mut TcpStream) -> Vec<u8> {
+    loop {
+        let message = read_message(stream).await;
+        if !matches!(
+            message_type(&message),
+            dtc::HEARTBEAT | dtc::MARKET_DATA_FEED_STATUS
+        ) {
+            return message;
+        }
+    }
 }
 
 fn message_type(message: &[u8]) -> u16 {

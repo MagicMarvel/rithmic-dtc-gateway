@@ -56,6 +56,18 @@ impl RithmicTradingFeed {
                 "Rithmic Paper account configuration failed: {error}"
             ))
         })?;
+        Self::connect(config, account).await
+    }
+
+    pub async fn connect(
+        config: RithmicConfig,
+        account: RithmicAccount,
+    ) -> Result<Self, TradingError> {
+        if config.env != RithmicEnv::Demo {
+            return Err(TradingError(
+                "DTC trading account must use the Rithmic demo environment".to_owned(),
+            ));
+        }
         let order_session = establish_order_session(&config, &account).await?;
         let pnl_session = match establish_pnl_session(&config, &account).await {
             Ok(session) => session,
@@ -784,6 +796,7 @@ fn build_new_order(
                 .to_owned(),
         );
     }
+    let tick_size = tick_size_for_symbol(&request.symbol);
     let mut order = RithmicOrder::new()
         .symbol(request.symbol)
         .exchange(request.exchange)
@@ -800,14 +813,16 @@ fn build_new_order(
         .window_name("Sierra Chart DTC");
     match order_type {
         OrderType::Market => {}
-        OrderType::Limit => order = order.price(validate_es_price(request.price1, "Price1")?),
+        OrderType::Limit => {
+            order = order.price(validate_price(request.price1, "Price1", tick_size)?)
+        }
         OrderType::StopMarket => {
-            order = order.trigger_price(validate_es_price(request.price1, "Price1")?)
+            order = order.trigger_price(validate_price(request.price1, "Price1", tick_size)?)
         }
         OrderType::StopLimit => {
             order = order
-                .trigger_price(validate_es_price(request.price1, "Price1")?)
-                .price(validate_es_price(request.price2, "Price2")?);
+                .trigger_price(validate_price(request.price1, "Price1", tick_size)?)
+                .price(validate_price(request.price2, "Price2", tick_size)?);
         }
         _ => return Err("unsupported DTC order type".to_owned()),
     }
@@ -844,6 +859,7 @@ async fn modify_order(
         return Err("changing TimeInForce is not supported".to_owned());
     }
     let order_type = dtc_order_type(existing.order_type)?;
+    let tick_size = tick_size_for_symbol(&existing.symbol);
     let server_order_id = request.server_order_id.clone();
     let requested_price1 = request.price1;
     let requested_price2 = request.price2;
@@ -863,18 +879,19 @@ async fn modify_order(
         }
         OrderType::Limit => {
             let price = request.price1.unwrap_or(existing.price1);
-            modification = modification.price(validate_es_price(price, "Price1")?);
+            modification = modification.price(validate_price(price, "Price1", tick_size)?);
         }
         OrderType::StopMarket => {
             let trigger = request.price1.unwrap_or(existing.price1);
-            modification = modification.trigger_price(validate_es_price(trigger, "Price1")?);
+            modification =
+                modification.trigger_price(validate_price(trigger, "Price1", tick_size)?);
         }
         OrderType::StopLimit => {
             let trigger = request.price1.unwrap_or(existing.price1);
             let limit = request.price2.unwrap_or(existing.price2);
             modification = modification
-                .trigger_price(validate_es_price(trigger, "Price1")?)
-                .price(validate_es_price(limit, "Price2")?);
+                .trigger_price(validate_price(trigger, "Price1", tick_size)?)
+                .price(validate_price(limit, "Price2", tick_size)?);
         }
         _ => return Err("unsupported DTC order type".to_owned()),
     }
@@ -969,13 +986,23 @@ fn validate_quantity(quantity: f64, max: i32) -> Result<i32, String> {
     }
 }
 
-fn validate_es_price(price: f64, field: &str) -> Result<f64, String> {
-    if !price.is_finite() || price <= 0.0 {
-        return Err(format!("{field} must be a finite positive ES price"));
+fn tick_size_for_symbol(symbol: &str) -> f64 {
+    if symbol.trim_start().to_ascii_uppercase().starts_with("GC") {
+        0.1
+    } else {
+        0.25
     }
-    let ticks = price / 0.25;
+}
+
+fn validate_price(price: f64, field: &str, tick_size: f64) -> Result<f64, String> {
+    if !price.is_finite() || price <= 0.0 {
+        return Err(format!("{field} must be a finite positive price"));
+    }
+    let ticks = price / tick_size;
     if (ticks - ticks.round()).abs() > 1e-8 {
-        return Err(format!("{field} must be aligned to the ES 0.25 tick size"));
+        return Err(format!(
+            "{field} must be aligned to the {tick_size} tick size"
+        ));
     }
     Ok(price)
 }
@@ -1413,6 +1440,12 @@ mod tests {
         assert_eq!(stop_limit.price_type, OrderType::StopLimit);
         assert_eq!(stop_limit.trigger_price, Some(7601.0));
         assert_eq!(stop_limit.price, Some(7600.75));
+    }
+
+    #[test]
+    fn gc_prices_use_the_gc_tick_size() {
+        assert!(validate_price(4000.1, "Price1", 0.1).is_ok());
+        assert!(validate_price(4000.15, "Price1", 0.1).is_err());
     }
 
     #[test]

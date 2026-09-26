@@ -3,6 +3,9 @@
 *.log
 .idea/
 data/options/
+data/dtc/
+data/history/
+data/rithmic-connection.json
 scratch/
 __pycache__/
 *.pyc

@@ -79,67 +79,6 @@ The default listener is `127.0.0.1:11099`; override it with
 `DTC_LISTEN_ADDR`. Do not expose this unauthenticated development server to a
 public or untrusted network.
 
-## Futures-options analytics service
-
-The same process can run the server-side options path alongside Sierra Chart:
-
-```text
-                    +-> JSONL snapshot database
-Rithmic -> Gateway -+-> Options Analyzer / HTTP API
-                    +-> DTC -> Sierra Chart
-```
-
-Enable it with `RITHMIC_ENABLE_OPTIONS=true` and set
-`RITHMIC_OPTIONS_UNDERLYING_SYMBOL` to the exact active futures contract. The
-gateway discovers `FUTURE_OPTION` instruments from Rithmic, selects the nearest
-configured expirations and strikes, and subscribes through the existing market
-plant. Its default dashboard is `http://127.0.0.1:11100/`; the current snapshot
-is also available from `/api/v1/analytics` and health from `/api/v1/health`.
-The current-process replay buffer is available from `/api/v1/replay` (up to
-1,200 snapshots).
-
-The intraday default is the nearest expiration only (`OPTIONS_MAX_EXPIRATIONS=1`),
-matching a standalone front-expiry view and avoiding a partially truncated next
-expiry when `OPTIONS_MAX_CONTRACTS` is reached. Increase it only when the
-contract cap is large enough to retain complete chains for every selected expiry.
-
-The configured root is the only market enabled by default. Additional markets
-must be listed explicitly, for example
-`RITHMIC_OPTIONS_MARKETS=ES:ESU6:CME,NQ:NQU6:CME`. This keeps a slow or
-unentitled secondary option board from delaying the primary market.
-
-The dashboard is a live trading surface rather than a diagnostic table. Its
-main canvas overlays the underlying-price path on a time-by-strike GEX heatmap;
-the side panes show the current gamma profile and call/put OI distribution. It
-also provides expiry and time-range controls, key-level overlays, aggressor-flow
-totals, hover inspection, and snapshot replay. The UI is dependency-free and is
-embedded into the release binary from `src/options_dashboard.html`.
-Snapshots are appended to `data/options/snapshots.jsonl` for persistence and
-future replay/backtesting.
-
-The MVP exposes a HuntingFlow-style working set: underlying price, gamma regime,
-net GEX proxy, zero-gamma/HVL, call and put walls, and per-strike call/put OI,
-aggressor-classified flow, implied volatility, and gamma exposure. It is an
-independent implementation based on publicly documented concepts; it does not
-copy Hermes branding, private formulas, or proprietary UI assets.
-
-Important data semantics:
-
-- each option trade is collected per contract; `aggressor=1` is classified as
-  buyer-initiated/at ask and `aggressor=2` as seller-initiated/at bid;
-- this identifies the aggressor side, not whether either participant opened or
-  closed a position;
-- Rithmic open interest is retained per contract. At session start it is normally
-  the exchange's most recently published OI (typically prior-session OI), not a
-  real-time open/close ledger;
-- GEX is explicitly labeled as a model estimate. The initial convention assumes
-  calls are dealer-long and puts dealer-short and uses Black-76 implied gamma;
-  it should be calibrated before it is used as a trading signal.
-
-For a remote server, leave the analyzer bound to loopback and place an
-authenticated TLS reverse proxy or VPN in front of it. The built-in HTTP endpoint
-has no authentication and should not be exposed directly to the internet.
-
 ## Probe acceptance criteria
 
 The process exits successfully only after it has observed all of:
@@ -176,6 +115,21 @@ depth, historical ticks, and historical intraday bars. Third-party MBO is never
 advertised to Sierra Chart: the complete Rithmic Depth-by-Order book exists only
 inside the bridge and is aggregated to Market-by-Price before it reaches DTC.
 
+### DTC account router
+
+The DTC process can use separate Rithmic credentials for market data/history and
+Paper order/PnL. Open http://127.0.0.1:11101/, enter the admin token printed at
+startup (or set DTC_ADMIN_TOKEN), edit either account, and choose **保存并切换**.
+The replacement connections are established before the active route changes;
+on success, existing Sierra sessions are closed so Sierra reconnects using the
+new route. A failed replacement leaves the current route running.
+
+The account file defaults to data/dtc/accounts.json, is excluded from Git, and
+is mode 0600 on Unix. Password fields are write-only in the API: leave them
+blank to keep the stored value. The management listener defaults to loopback and
+must not be exposed publicly. Trading remains restricted to the Rithmic
+Demo/Paper environment.
+
 ## Connect Sierra Chart
 
 Create or edit a DTC Service connection in Sierra Chart with these values:
@@ -208,6 +162,93 @@ at logon and also registers manually resolved contracts on demand. Symbols can
 appear in Sierra's `Other` category because core DTC security definitions do not
 carry Sierra-specific category and rollover rules; this does not prevent charts,
 market depth, or historical requests from using them.
+
+## Rithmic Flow web terminal
+
+The repository also includes a browser terminal using TradingView Lightweight
+Charts 5.2.1. Real-time market data and history always come from the server's
+Rithmic connection. A separate, optional user connection handles Paper orders,
+accounts, positions, and P/L. The terminal supports ES, NQ, and GC tabs,
+minute-bar history, live candles, best bid/ask, aggregated depth, Paper order
+entry, positions, working orders, and cancel requests. Start it with:
+
+```powershell
+cargo run --bin trading_terminal
+```
+
+The default URL is `http://127.0.0.1:11200/`; override it with
+`TERMINAL_HTTP_LISTEN_ADDR`. Every terminal API, including the live WebSocket,
+history, and order routes, requires a valid member session. Configure one member
+with `TERMINAL_MEMBER_USER` and `TERMINAL_MEMBER_PASSWORD`, or multiple members
+with `TERMINAL_MEMBERS_JSON`. Each JSON entry accepts `username`, `password`,
+optional `active`, and optional Unix `expiresAt`. If no members are configured,
+the server fails closed and the terminal shows a configuration message instead
+of returning market data. Sessions use an HttpOnly, SameSite=Strict cookie and
+default to 12 hours (`TERMINAL_MEMBER_SESSION_SECS`); set
+`TERMINAL_COOKIE_SECURE=true` behind HTTPS. The built-in account source is
+intended for a private deployment; use TLS and a proper membership service or
+reverse proxy before exposing the terminal publicly. Set the Rithmic
+environment variables in `.env` first. `RITHMIC_ENABLE_TRADING=true` enables
+the existing Paper-only trading plant; otherwise the order ticket remains
+read-only. The frontend asks for an explicit confirmation before every order.
+
+Configuring a personal order account without restarting: the `下单账号` button in the
+top bar opens a drawer with the environment (Paper Trading, Live, Test), the
+system name (`Rithmic Paper Trading`, `Rithmic 01`, or a prop-firm system such
+as `Apex` or `TopstepTrader`), the user, password, Paper Account/FCM/IB IDs, and
+gateway URLs. `测试登录` logs in on a throwaway socket, reports which systems the
+gateway offers, and does not disturb the server data feeds. `保存并连接下单`
+establishes a replacement Paper order connection (when trading is enabled) and
+atomically replaces only the order client. It never reloads, clears, or
+reconnects market/history data. A failed replacement leaves the old order
+account active. When `保存下单连接` is checked, the settings are written to
+`data/rithmic-trading-connection.json` (override with
+`RITHMIC_TRADING_CONNECTION_FILE`) so the terminal keeps using that order
+account after a restart. `清除下单连接` returns the terminal to read-only mode
+without affecting the chart. The drawer can also keep several account profiles in the
+browser's local storage for one-click switching; passwords are only stored
+there when explicitly confirmed. The endpoints are `GET/POST /api/connection`,
+`POST /api/connection/test`, and `POST /api/connection/reset`, and the response
+never includes the password or the server data credentials. The server data
+connection, DTC server, and probes keep reading the environment only.
+
+Chart toolbar features:
+
+- **History download by days.** The `天数` box next to the period buttons
+  selects how many calendar days (1-3650) of history to load; `下载` forces a
+  refresh (`/api/history?...&days=N&refresh=1`). Browser charts use only the
+  Rithmic History Plant and a separate local Rithmic cache; there is no public
+  market-data fallback. The chosen day count is remembered per browser.
+- **Footprint chart.** The `足迹图` chart type requests raw Rithmic trades and
+  displays price-level Bid x Ask volume, per-bar delta, and the point of control.
+  Live Rithmic trades update the open footprint bar in real time.
+- **Large-order indicator.** Enable `大单成交` from `指标` and open its settings
+  to choose the minimum individual Rithmic trade size, buy/sell colors, and
+  labels. Historical time, Tick, and Range bars retain the largest individual
+  Bid/Ask trade at every price level instead of treating aggregate bar volume as
+  one order.
+- **Anchored VWAP.** `VWAP` supports Session (configurable New York session
+  start), week, month, year, first visible bar, and a custom date/time anchor,
+  plus HLC3/OHLC4/Close source, color, and line width settings.
+- **Drawing tools.** `趋势线` places a line with two chart clicks. `VP` selects a
+  fixed time range and draws its volume-by-price profile and POC. Drawings are
+  saved per symbol in browser storage; `清除` removes the current symbol's
+  drawings.
+- **Mobile landscape layout.** On phones and small tablets used sideways, the
+  chart fills the first viewport, the dense toolbar becomes touch-scrollable,
+  and order entry, depth, positions, orders, and statistics stack vertically
+  below it. Safe-area insets and short landscape login/settings views are
+  handled explicitly.
+- **Time-axis zone switch.** The `纽约 / 北京` toggle at the bottom-right of the
+  chart re-labels the time axis, crosshair, and feed timestamps in
+  `America/New_York` or `Asia/Shanghai`. The choice is remembered per browser.
+ - **Indicator menu (`指标`).** The only chart overlay is the MenthorQ intraday
+   levels (`MQ`), toggled from the `基础叠加` group in the `指标` dropdown.
+   Ticking `MQ` loads the current contract's levels when an API key is saved in
+   `MQ 设置`, otherwise it opens that drawer. The choice is remembered per
+   browser. The MenthorQ API key lives only in the browser's local storage and
+   in the `MQ 设置` drawer you type into; it is never written to any file in
+   this project, so every recipient has to paste their own key.
 
 Run the credentialed Paper Trading end-to-end tests one at a time with:
 

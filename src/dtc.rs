@@ -629,6 +629,7 @@ async fn start_historical_request(
         start_time: read_i64(bytes, 96),
         end_time: read_i64(bytes, 104),
         max_days: read_u32(bytes, 112),
+        tick_bar_length: 0,
     };
     eprintln!(
         "[DTC] Historical request: RequestID={}, {}.{}, interval={}s, start={}, end={}, max_days={}",
@@ -1629,10 +1630,14 @@ async fn handle_trading_request(
                     )]);
                 }
             };
-            if resolved.min_price_increment != 0.25 {
+            if !resolved.min_price_increment.is_finite()
+                || resolved.min_price_increment <= 0.0
+                || (resolved.min_price_increment - 0.25).abs() > f32::EPSILON
+                    && (resolved.min_price_increment - 0.1).abs() > f32::EPSILON
+            {
                 return Ok(vec![new_order_rejection(
                     &request,
-                    "Paper trading is limited to contracts with a verified 0.25 tick size",
+                    "Paper trading is limited to verified 0.25 (ES/NQ) or 0.1 (GC) tick contracts",
                 )]);
             }
             // Sierra can send the combined display symbol (for example NQU6-CME) with
@@ -3709,7 +3714,6 @@ mod tests {
                         .unwrap();
                 }
                 MarketCommand::LoadCatalog { .. }
-                | MarketCommand::DiscoverOptions { .. }
                 | MarketCommand::Unsubscribe { .. }
                 | MarketCommand::SubscribeDepth { .. }
                 | MarketCommand::UnsubscribeDepth { .. }

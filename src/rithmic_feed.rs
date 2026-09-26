@@ -11,26 +11,27 @@ use std::{
 };
 
 use rithmic_rs::{
-    ConnectStrategy, InstrumentInfo, LoginConfig, RithmicConfig, RithmicEnv, RithmicTickerPlant,
+    ConnectStrategy, InstrumentInfo, LoginConfig, RithmicConfig, RithmicTickerPlant,
     RithmicTickerPlantHandle,
     api::RithmicResponse,
     error::RithmicError,
     rti::{messages::RithmicMessage, request_search_symbols},
 };
-use tokio::sync::{broadcast, mpsc};
+use tokio::sync::{broadcast, mpsc, oneshot};
 
 use crate::{
+    connection::SharedConnection,
     identity::synthetic_mac,
     maintenance_retry::MaintenanceBackoff,
     market_data::{self, MarketSnapshot},
     market_gateway::{
         Instrument as MarketInstrument, MarketCommand, MarketDataClient, MarketEvent,
-        OptionContract, OptionType,
     },
     order_book::{BookError, DepthLevel, OrderBook, OrderUpdate, Side, UpdateAction, diff_levels},
 };
 
 const MAX_PUBLISHED_CATALOG_PRODUCTS: usize = 32;
+const MARKET_CONNECTION_ATTEMPT_BUDGET: Duration = Duration::from_secs(20);
 const PRIORITY_CATALOG_PRODUCTS: &[(&str, &str)] = &[
     ("ES", "CME"),
     ("NQ", "CME"),
@@ -68,7 +69,7 @@ impl Error for FeedError {}
 
 #[derive(Clone)]
 pub struct RithmicFeed {
-    config: Arc<RithmicConfig>,
+    connection: SharedConnection,
     initial_plant: Arc<Mutex<Option<RithmicTickerPlant>>>,
     client_active: Arc<AtomicBool>,
     catalog_cache: Arc<Mutex<Option<Vec<MarketInstrument>>>>,
@@ -76,13 +77,18 @@ pub struct RithmicFeed {
 
 impl RithmicFeed {
     pub async fn connect_from_env() -> Result<Self, FeedError> {
-        let environment =
-            parse_environment(&env::var("RITHMIC_ENV").unwrap_or_else(|_| "demo".to_owned()))?;
-        let config = RithmicConfig::from_env(environment)
-            .map_err(|error| FeedError(format!("Rithmic configuration failed: {error}")))?;
+        Self::connect_with(SharedConnection::from_env()).await
+    }
+
+    pub async fn connect(config: RithmicConfig) -> Result<Self, FeedError> {
+        Self::connect_with(SharedConnection::from_config(config)).await
+    }
+
+    pub async fn connect_with(connection: SharedConnection) -> Result<Self, FeedError> {
+        let config = market_config(&connection)?;
         let mut backoff = MaintenanceBackoff::from_env();
         let plant = loop {
-            match connect_and_login(&config, ConnectStrategy::Simple).await {
+            match connect_and_login_within(&config, ConnectStrategy::Simple).await {
                 Ok(plant) => break plant,
                 Err(error) if MaintenanceBackoff::is_retryable(&error) => {
                     backoff.wait("Ticker", &error).await;
@@ -90,19 +96,39 @@ impl RithmicFeed {
                 Err(error) => return Err(FeedError(error)),
             }
         };
-        Ok(Self {
-            config: Arc::new(config),
-            initial_plant: Arc::new(Mutex::new(Some(plant))),
+        Ok(Self::spawn(connection, Some(plant)))
+    }
+
+    /// Creates the market gateway immediately and lets its supervisor establish
+    /// the Rithmic session in the background. This keeps the local terminal
+    /// reachable while Rithmic is undergoing maintenance or retaining a stale
+    /// account session.
+    pub async fn pending_from_env() -> Result<Self, FeedError> {
+        Self::pending_with(SharedConnection::from_env()).await
+    }
+
+    /// Like [`pending_from_env`](Self::pending_from_env) but every connection
+    /// attempt reads the current settings of `connection`, and a settings
+    /// change (`SharedConnection::apply`) makes the supervisor log in again.
+    pub async fn pending_with(connection: SharedConnection) -> Result<Self, FeedError> {
+        market_config(&connection)?;
+        Ok(Self::spawn(connection, None))
+    }
+
+    fn spawn(connection: SharedConnection, initial_plant: Option<RithmicTickerPlant>) -> Self {
+        Self {
+            connection,
+            initial_plant: Arc::new(Mutex::new(initial_plant)),
             client_active: Arc::new(AtomicBool::new(false)),
             catalog_cache: Arc::new(Mutex::new(None)),
-        })
+        }
     }
 
     pub fn client(&self) -> MarketDataClient {
         let (commands_tx, commands_rx) = mpsc::channel(32);
         let (events_tx, events_rx) = mpsc::channel(4096);
         tokio::spawn(run_market_supervisor(
-            Arc::clone(&self.config),
+            self.connection.clone(),
             Arc::clone(&self.initial_plant),
             Arc::clone(&self.client_active),
             Arc::clone(&self.catalog_cache),
@@ -124,6 +150,10 @@ impl RithmicFeed {
     }
 }
 
+fn market_config(connection: &SharedConnection) -> Result<RithmicConfig, FeedError> {
+    connection.config().map_err(FeedError)
+}
+
 async fn connect_and_login(
     config: &RithmicConfig,
     strategy: ConnectStrategy,
@@ -142,9 +172,29 @@ async fn connect_and_login(
     Ok(plant)
 }
 
+async fn connect_and_login_within(
+    config: &RithmicConfig,
+    strategy: ConnectStrategy,
+) -> Result<RithmicTickerPlant, String> {
+    match tokio::time::timeout(
+        MARKET_CONNECTION_ATTEMPT_BUDGET,
+        connect_and_login(config, strategy),
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(_) => Err(format!(
+            "Rithmic connection attempt timed out after {} seconds",
+            MARKET_CONNECTION_ATTEMPT_BUDGET.as_secs()
+        )),
+    }
+}
+
 enum SessionExit {
     ClientClosed,
     ConnectionLost(String),
+    /// The connection settings changed; log in again with the new values.
+    Reconfigured,
 }
 
 struct ActiveClientGuard(Arc<AtomicBool>);
@@ -156,7 +206,7 @@ impl Drop for ActiveClientGuard {
 }
 
 async fn run_market_supervisor(
-    config: Arc<RithmicConfig>,
+    connection: SharedConnection,
     initial_plant: Arc<Mutex<Option<RithmicTickerPlant>>>,
     client_active: Arc<AtomicBool>,
     catalog_cache: Arc<Mutex<Option<Vec<MarketInstrument>>>>,
@@ -181,31 +231,51 @@ async fn run_market_supervisor(
     let mut depth: HashMap<u32, DepthSubscription> = HashMap::new();
     let mut reconnecting = false;
     let mut backoff = Duration::from_millis(500);
+    let mut generation = connection.watch();
 
     loop {
+        // Settings that changed while disconnected are picked up here; only a
+        // change during a live session has to interrupt it.
+        generation.borrow_and_update();
+        let config = match connection.config() {
+            Ok(config) => config,
+            Err(error) => {
+                if commands.is_closed() {
+                    return;
+                }
+                let _ = events.send(MarketEvent::FeedError(error)).await;
+                let _ = generation.changed().await;
+                continue;
+            }
+        };
         let current_plant = match plant.take() {
             Some(plant) => plant,
-            None => match connect_and_login(&config, ConnectStrategy::Simple).await {
+            None => match connect_and_login_within(&config, ConnectStrategy::Simple).await {
                 Ok(plant) => plant,
                 Err(error) => {
                     if commands.is_closed() {
                         return;
                     }
                     let _ = events.send(MarketEvent::FeedError(error)).await;
-                    tokio::time::sleep(backoff).await;
+                    // New settings cut the wait short.
+                    let _ = tokio::time::timeout(backoff, generation.changed()).await;
                     backoff = (backoff * 2).min(Duration::from_secs(60));
                     continue;
                 }
             },
         };
-        let mut handle = current_plant.get_handle();
+        let handle = Arc::new(current_plant.get_handle());
+
+        let _ = events
+            .send(MarketEvent::FeedStatus { available: true })
+            .await;
 
         if reconnecting {
             match restore_subscriptions(&handle, &subscriptions, &mut depth).await {
-                Ok(()) => {
-                    let _ = events
-                        .send(MarketEvent::FeedStatus { available: true })
-                        .await;
+                Ok(warnings) => {
+                    for warning in warnings {
+                        let _ = events.send(MarketEvent::FeedError(warning)).await;
+                    }
                     for subscription in depth.values() {
                         emit_depth_snapshot(subscription, &events, 0).await;
                     }
@@ -227,13 +297,14 @@ async fn run_market_supervisor(
         }
 
         match run_connected_session(
-            &mut handle,
+            Arc::clone(&handle),
             &config.user,
             &catalog_cache,
             &mut commands,
             &events,
             &mut subscriptions,
             &mut depth,
+            &mut generation,
         )
         .await
         {
@@ -241,6 +312,23 @@ async fn run_market_supervisor(
                 let _ = handle.disconnect().await;
                 let _ = current_plant.await_shutdown().await;
                 return;
+            }
+            SessionExit::Reconfigured => {
+                let _ = events
+                    .send(MarketEvent::FeedStatus { available: false })
+                    .await;
+                let _ = events
+                    .send(MarketEvent::FeedError(
+                        "Rithmic connection settings changed; logging in again".to_owned(),
+                    ))
+                    .await;
+                let _ = handle.disconnect().await;
+                let _ = current_plant.await_shutdown().await;
+                *catalog_cache
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
+                reconnecting = true;
+                backoff = Duration::from_millis(500);
             }
             SessionExit::ConnectionLost(reason) => {
                 let _ = events
@@ -260,25 +348,86 @@ async fn run_market_supervisor(
     }
 }
 
+/// Result of subscription work that runs off the market event loop.
+/// Result of subscription work that runs off the market event loop.
+///
+/// The loop owns `subscriptions` and `depth`, so the work reports back and the
+/// loop commits the outcome. That keeps a slow upstream acknowledgement from
+/// stalling market data for every other symbol.
+enum SubscriptionWork {
+    Subscribed {
+        symbol_id: u32,
+        symbol: String,
+        exchange: String,
+        response: oneshot::Sender<Result<MarketSnapshot, String>>,
+        result: Result<MarketSnapshot, String>,
+    },
+    DepthSubscribed {
+        symbol_id: u32,
+        response: oneshot::Sender<Result<Vec<DepthLevel>, String>>,
+        result: Result<(DepthSubscription, Vec<DepthLevel>), String>,
+    },
+}
+
+/// Whether the upstream acknowledgement of a new subscription arrived in time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SubscribeAck {
+    Confirmed,
+    Unconfirmed,
+}
 async fn run_connected_session(
-    handle: &mut RithmicTickerPlantHandle,
+    handle: Arc<RithmicTickerPlantHandle>,
     user: &str,
     catalog_cache: &Arc<Mutex<Option<Vec<MarketInstrument>>>>,
     commands: &mut mpsc::Receiver<MarketCommand>,
     events: &mpsc::Sender<MarketEvent>,
     subscriptions: &mut HashMap<u32, (String, String)>,
     depth: &mut HashMap<u32, DepthSubscription>,
+    generation: &mut tokio::sync::watch::Receiver<u64>,
 ) -> SessionExit {
     // Cleared on every upstream connection; never serve a stale pre-reconnect quote.
     let mut snapshots: HashMap<(String, String), MarketSnapshot> = HashMap::new();
+    // Subscription work runs in its own task: a slow upstream acknowledgement
+    // must never stop this loop from forwarding market data for every other
+    // symbol, which is what froze the whole terminal when a second symbol was
+    // subscribed while a Depth-by-Order book was already streaming.
+    let mut market_messages = handle.subscription_receiver.resubscribe();
+    let (work_tx, mut work_rx) = mpsc::channel::<SubscriptionWork>(64);
     loop {
         tokio::select! {
+            changed = generation.changed() => {
+                return match changed {
+                    Ok(()) => SessionExit::Reconfigured,
+                    Err(_) => SessionExit::ConnectionLost("connection settings were dropped".to_owned()),
+                };
+            }
+            completed = work_rx.recv() => {
+                let Some(completed) = completed else { return SessionExit::ClientClosed };
+                match completed {
+                    SubscriptionWork::Subscribed { symbol_id, symbol, exchange, response, result } => {
+                        match result {
+                            Ok(snapshot) => {
+                                snapshots.insert((symbol.clone(), exchange.clone()), snapshot.clone());
+                                subscriptions.insert(symbol_id, (symbol, exchange));
+                                let _ = response.send(Ok(snapshot));
+                            }
+                            Err(error) => { let _ = response.send(Err(error)); }
+                        }
+                    }
+                    SubscriptionWork::DepthSubscribed { symbol_id, response, result } => {
+                        match result {
+                            Ok((subscription, levels)) => {
+                                depth.insert(symbol_id, subscription);
+                                let _ = response.send(Ok(levels));
+                            }
+                            Err(error) => { let _ = response.send(Err(error)); }
+                        }
+                    }
+                }
+            }
             command = commands.recv() => {
                 let Some(command) = command else { return SessionExit::ClientClosed };
                 match command {
-                    MarketCommand::DiscoverOptions { underlying, exchange, expiration, response } => {
-                        let _ = response.send(discover_options(handle, &underlying, &exchange, expiration.as_deref()).await);
-                    }
                     MarketCommand::LoadCatalog {
                         preferred_underlying,
                         response,
@@ -289,7 +438,7 @@ async fn run_connected_session(
                             .clone();
                         let result = match cached {
                             Some(catalog) => Ok(catalog),
-                            None => load_catalog(handle, &preferred_underlying).await.map(|catalog| {
+                            None => load_catalog(&handle, &preferred_underlying).await.map(|catalog| {
                                 *catalog_cache
                                     .lock()
                                     .unwrap_or_else(|poisoned| poisoned.into_inner()) =
@@ -300,7 +449,7 @@ async fn run_connected_session(
                         let _ = response.send(result);
                     }
                     MarketCommand::ListCatalogExchanges { response } => {
-                        let _ = response.send(list_catalog_exchanges(handle, user).await);
+                        let _ = response.send(list_catalog_exchanges(&handle, user).await);
                     }
                     MarketCommand::SearchCatalog {
                         search_text,
@@ -309,11 +458,11 @@ async fn run_connected_session(
                         response,
                     } => {
                         let _ = response.send(
-                            search_catalog(handle, user, &search_text, &exchange, search_type).await,
+                            search_catalog(&handle, user, &search_text, &exchange, search_type).await,
                         );
                     }
                     MarketCommand::EnumerateCatalog { exchange, underlying, roots_only, response } => {
-                        let _ = response.send(enumerate_catalog(handle, user, &exchange, &underlying, roots_only).await);
+                        let _ = response.send(enumerate_catalog(&handle, user, &exchange, &underlying, roots_only).await);
                     }
                     MarketCommand::ResolveCatalogInstrument {
                         symbol,
@@ -321,20 +470,28 @@ async fn run_connected_session(
                         response,
                     } => {
                         let _ = response.send(
-                            resolve_catalog_instrument(handle, &symbol, &exchange).await,
+                            resolve_catalog_instrument(&handle, &symbol, &exchange).await,
                         );
                     }
                     MarketCommand::Subscribe { symbol_id, symbol, exchange, response } => {
-                        let result = if let Err(error) = validate_subscription(subscriptions, symbol_id, &symbol, &exchange) {
-                            Err(error)
+                        if let Err(error) = validate_subscription(subscriptions, symbol_id, &symbol, &exchange) {
+                            let _ = response.send(Err(error));
                         } else {
-                            capture_market_snapshot(handle, &symbol, &exchange, false).await.map(|snapshot| {
-                                snapshots.insert((symbol.clone(), exchange.clone()), snapshot.clone());
-                                subscriptions.insert(symbol_id, (symbol, exchange));
-                                snapshot
-                            })
-                        };
-                        let _ = response.send(result);
+                            let handle = Arc::clone(&handle);
+                            let work = work_tx.clone();
+                            tokio::spawn(async move {
+                                let result = capture_market_snapshot(&handle, &symbol, &exchange, false).await;
+                                let _ = work
+                                    .send(SubscriptionWork::Subscribed {
+                                        symbol_id,
+                                        symbol,
+                                        exchange,
+                                        response,
+                                        result,
+                                    })
+                                    .await;
+                            });
+                        }
                     }
                     MarketCommand::Snapshot { symbol, exchange, response } => {
                         let active = subscriptions.values().any(|(s, e)| s == &symbol && e == &exchange);
@@ -342,12 +499,12 @@ async fn run_connected_session(
                             if let Some(snapshot) = snapshots.get(&(symbol.clone(), exchange.clone())) {
                                 Ok(snapshot.clone())
                             } else { Ok(MarketSnapshot::default()) }
-                        } else { capture_market_snapshot(handle, &symbol, &exchange, true).await };
+                        } else { capture_market_snapshot(&handle, &symbol, &exchange, true).await };
                         let _ = response.send(result);
                     }
                     MarketCommand::DepthSnapshot { symbol, exchange, tick_size, max_levels, response } => {
                         // DBO snapshot is a request, not a streaming subscription.
-                        let result = create_depth_subscription(handle, 0, symbol, exchange, tick_size, max_levels, false)
+                        let result = create_depth_subscription(&handle, 0, symbol, exchange, tick_size, max_levels, false)
                             .await.map(|(_, levels)| levels);
                         let _ = response.send(result);
                     }
@@ -369,28 +526,36 @@ async fn run_connected_session(
                         max_levels,
                         response,
                     } => {
-                        let result = if depth.contains_key(&symbol_id) {
-                            Err(format!("SymbolID {symbol_id} already has a depth subscription"))
+                        if depth.contains_key(&symbol_id) {
+                            let _ = response.send(Err(format!(
+                                "SymbolID {symbol_id} already has a depth subscription"
+                            )));
                         } else {
                             let needs_upstream_subscription = !depth.values().any(|subscription| {
                                 subscription.symbol == symbol && subscription.exchange == exchange
                             });
-                            create_depth_subscription(
-                                &handle,
-                                symbol_id,
-                                symbol,
-                                exchange,
-                                tick_size,
-                                max_levels,
-                                needs_upstream_subscription,
-                            )
-                            .await
-                            .map(|(subscription, levels)| {
-                                depth.insert(symbol_id, subscription);
-                                levels
-                            })
-                        };
-                        let _ = response.send(result);
+                            let handle = Arc::clone(&handle);
+                            let work = work_tx.clone();
+                            tokio::spawn(async move {
+                                let result = create_depth_subscription(
+                                    &handle,
+                                    symbol_id,
+                                    symbol,
+                                    exchange,
+                                    tick_size,
+                                    max_levels,
+                                    needs_upstream_subscription,
+                                )
+                                .await;
+                                let _ = work
+                                    .send(SubscriptionWork::DepthSubscribed {
+                                        symbol_id,
+                                        response,
+                                        result,
+                                    })
+                                    .await;
+                            });
+                        }
                     }
                     MarketCommand::UnsubscribeDepth { symbol_id, response } => {
                         let result = match depth.remove(&symbol_id) {
@@ -416,7 +581,7 @@ async fn run_connected_session(
                     }
                 }
             }
-            response = handle.subscription_receiver.recv() => {
+            response = market_messages.recv() => {
                 match response {
                     Ok(response) => {
                         if let Some(reason) = connection_loss_reason(&response) {
@@ -458,159 +623,6 @@ async fn run_connected_session(
             }
         }
     }
-}
-
-async fn discover_options(
-    handle: &RithmicTickerPlantHandle,
-    underlying: &str,
-    exchange: &str,
-    expiration: Option<&str>,
-) -> Result<Vec<OptionContract>, String> {
-    let responses = handle
-        .get_instrument_by_underlying(underlying, exchange, expiration)
-        .await
-        .map_err(|error| error.to_string())?;
-    let response_count = responses.len();
-    let mut contracts = Vec::new();
-    let mut expirations = Vec::new();
-    let mut samples = Vec::new();
-    for response in responses {
-        if let Some(error) = response.error {
-            return Err(error.to_string());
-        }
-        let item = match response.message {
-            RithmicMessage::ResponseGetInstrumentByUnderlyingKeys(keys) => {
-                expirations.extend(keys.expiration_date);
-                continue;
-            }
-            RithmicMessage::ResponseGetInstrumentByUnderlying(item) => item,
-            _ => continue,
-        };
-        if samples.len() < 4 {
-            samples.push(format!(
-                "symbol={:?} type={:?} underlying={:?} expiry={:?} pc={:?} strike={:?}",
-                item.symbol,
-                item.instrument_type,
-                item.underlying_symbol,
-                item.expiration_date,
-                item.put_call_indicator,
-                item.strike_price
-            ));
-        }
-        if let Some(value) = item
-            .expiration_date
-            .clone()
-            .filter(|value| !value.is_empty())
-        {
-            expirations.push(value);
-        }
-        if let Some(contract) = option_contract_from_underlying(item, underlying, exchange) {
-            contracts.push(contract);
-        }
-    }
-    if contracts.is_empty() && expiration.is_none() {
-        println!(
-            "[Options] reference query {underlying}.{exchange}: {response_count} responses, {} expirations, samples: {}",
-            expirations.len(),
-            samples.join(" | ")
-        );
-        expirations.sort();
-        expirations.dedup();
-        let mut expiry_samples = Vec::new();
-        for expiry in expirations.into_iter().take(16) {
-            let responses = handle
-                .get_instrument_by_underlying(underlying, exchange, Some(&expiry))
-                .await
-                .map_err(|error| error.to_string())?;
-            for response in responses {
-                if let Some(error) = response.error {
-                    return Err(error.to_string());
-                }
-                let RithmicMessage::ResponseGetInstrumentByUnderlying(item) = response.message
-                else {
-                    continue;
-                };
-                if expiry_samples.len() < 8 {
-                    expiry_samples.push(format!(
-                        "query={expiry} symbol={:?} type={:?} underlying={:?} expiry={:?} pc={:?} strike={:?} exchange={:?}",
-                        item.symbol,
-                        item.instrument_type,
-                        item.underlying_symbol,
-                        item.expiration_date,
-                        item.put_call_indicator,
-                        item.strike_price,
-                        item.exchange
-                    ));
-                }
-                if let Some(contract) = option_contract_from_underlying(item, underlying, exchange)
-                {
-                    contracts.push(contract);
-                }
-            }
-        }
-        if contracts.is_empty() && !expiry_samples.is_empty() {
-            println!(
-                "[Options] rejected instrument samples for {underlying}.{exchange}: {}",
-                expiry_samples.join(" | ")
-            );
-        }
-    }
-    contracts.sort_by(|a, b| {
-        a.expiration
-            .cmp(&b.expiration)
-            .then_with(|| a.strike.total_cmp(&b.strike))
-            .then_with(|| (a.option_type as u8).cmp(&(b.option_type as u8)))
-    });
-    contracts.dedup_by(|a, b| a.symbol == b.symbol && a.exchange == b.exchange);
-    Ok(contracts)
-}
-
-fn option_contract_from_underlying(
-    item: rithmic_rs::rti::ResponseGetInstrumentByUnderlying,
-    underlying: &str,
-    exchange: &str,
-) -> Option<OptionContract> {
-    if !item
-        .instrument_type
-        .as_deref()
-        .is_some_and(|kind| kind.to_ascii_uppercase().contains("OPTION"))
-    {
-        return None;
-    }
-    let option_type = match item.put_call_indicator.as_deref().map(str::trim) {
-        Some(value) if value.eq_ignore_ascii_case("C") || value.eq_ignore_ascii_case("CALL") => {
-            OptionType::Call
-        }
-        Some(value) if value.eq_ignore_ascii_case("P") || value.eq_ignore_ascii_case("PUT") => {
-            OptionType::Put
-        }
-        _ => return None,
-    };
-    let (Some(symbol), Some(strike), Some(expiration)) =
-        (item.symbol, item.strike_price, item.expiration_date)
-    else {
-        return None;
-    };
-    if symbol.is_empty() || !strike.is_finite() || strike <= 0.0 {
-        return None;
-    }
-    Some(OptionContract {
-        symbol,
-        exchange: item.exchange.unwrap_or_else(|| exchange.to_owned()),
-        underlying: item
-            .underlying_symbol
-            .unwrap_or_else(|| underlying.to_owned()),
-        expiration,
-        strike,
-        option_type,
-        multiplier: item
-            .single_point_value
-            .filter(|value| value.is_finite() && *value > 0.0)
-            .unwrap_or(1.0),
-        tick_size: item
-            .min_qprice_change
-            .filter(|value| value.is_finite() && *value > 0.0),
-    })
 }
 
 fn connection_loss_reason(response: &RithmicResponse) -> Option<String> {
@@ -963,33 +975,71 @@ fn instrument_from_rithmic(info: InstrumentInfo) -> Result<MarketInstrument, Str
     })
 }
 
+/// Re-establish market data after a reconnect. Trade and quote subscriptions
+/// are required: their failure aborts the restore so the session reconnects
+/// again. Depth-by-Order is best effort: a stream whose snapshot cannot be
+/// rebuilt (slow or empty snapshot, rejected subscription) is dropped and
+/// reported through the returned warnings, while trades keep flowing so the
+/// chart and footprint continue. The DOM degrades to best bid/ask until the
+/// terminal requests depth again.
 async fn restore_subscriptions(
     handle: &RithmicTickerPlantHandle,
     subscriptions: &HashMap<u32, (String, String)>,
     depth: &mut HashMap<u32, DepthSubscription>,
-) -> Result<(), String> {
+) -> Result<Vec<String>, String> {
     let unique: HashSet<_> = subscriptions.values().cloned().collect();
     for (symbol, exchange) in unique {
         subscribe(handle, &symbol, &exchange).await?;
     }
+    let mut warnings = Vec::new();
+    let mut failed: HashSet<(String, String)> = HashSet::new();
     let unique_depth: HashSet<_> = depth
         .values()
         .map(|subscription| (subscription.symbol.clone(), subscription.exchange.clone()))
         .collect();
     for (symbol, exchange) in unique_depth {
-        let response = handle
-            .subscribe_depth_by_order_update(&symbol, &exchange)
-            .await
-            .map_err(|error| error.to_string())?;
-        if let Some(error) = response.error {
-            return Err(error.to_string());
+        let label = format!("depth-by-order restore for {symbol}.{exchange}");
+        if let Err(error) = bounded_ack(
+            DEPTH_ACK_TIMEOUT,
+            &label,
+            handle.subscribe_depth_by_order_update(&symbol, &exchange),
+        )
+        .await
+        {
+            warnings.push(format!("{label} failed: {error}"));
+            failed.insert((symbol, exchange));
         }
     }
     for subscription in depth.values_mut() {
-        refresh_depth_snapshot(handle, subscription).await?;
-        sync_published_depth(subscription);
+        let key = (subscription.symbol.clone(), subscription.exchange.clone());
+        if failed.contains(&key) {
+            continue;
+        }
+        let mut result = refresh_depth_snapshot(handle, subscription).await;
+        if result.is_err() {
+            // One slow snapshot right after login is common; give it a second try.
+            result = refresh_depth_snapshot(handle, subscription).await;
+        }
+        match result {
+            Ok(()) => sync_published_depth(subscription),
+            Err(error) => {
+                warnings.push(format!(
+                    "Depth-by-Order restore for {}.{} failed: {error}; market depth falls back to best bid/ask",
+                    subscription.symbol, subscription.exchange
+                ));
+                failed.insert(key);
+            }
+        }
     }
-    Ok(())
+    if !failed.is_empty() {
+        for (symbol, exchange) in &failed {
+            let _ = unsubscribe_depth(handle, symbol, exchange).await;
+        }
+        depth.retain(|_, subscription| {
+            !failed.contains(&(subscription.symbol.clone(), subscription.exchange.clone()))
+        });
+    }
+    Ok(warnings)
 }
 
 struct DepthSubscription {
@@ -1013,13 +1063,13 @@ async fn create_depth_subscription(
     needs_upstream_subscription: bool,
 ) -> Result<(DepthSubscription, Vec<DepthLevel>), String> {
     if needs_upstream_subscription {
-        let response = handle
-            .subscribe_depth_by_order_update(&symbol, &exchange)
-            .await
-            .map_err(|error| error.to_string())?;
-        if let Some(error) = response.error {
-            return Err(error.to_string());
-        }
+        let label = format!("depth-by-order subscription for {symbol}.{exchange}");
+        bounded_ack(
+            DEPTH_ACK_TIMEOUT,
+            &label,
+            handle.subscribe_depth_by_order_update(&symbol, &exchange),
+        )
+        .await?;
     }
     let mut subscription = DepthSubscription {
         symbol_id,
@@ -1033,9 +1083,7 @@ async fn create_depth_subscription(
     };
     if let Err(error) = refresh_depth_snapshot(handle, &mut subscription).await {
         if needs_upstream_subscription {
-            let _ = handle
-                .unsubscribe_depth_by_order_update(&subscription.symbol, &subscription.exchange)
-                .await;
+            let _ = unsubscribe_depth(handle, &subscription.symbol, &subscription.exchange).await;
         }
         return Err(error);
     }
@@ -1049,23 +1097,36 @@ async fn unsubscribe_depth(
     symbol: &str,
     exchange: &str,
 ) -> Result<(), String> {
-    let response = handle
-        .unsubscribe_depth_by_order_update(symbol, exchange)
-        .await
-        .map_err(|error| error.to_string())?;
-    response
-        .error
-        .map_or(Ok(()), |error| Err(error.to_string()))
+    let label = format!("depth-by-order unsubscribe for {symbol}.{exchange}");
+    bounded_ack(
+        DEPTH_UNSUBSCRIBE_TIMEOUT,
+        &label,
+        handle.unsubscribe_depth_by_order_update(symbol, exchange),
+    )
+    .await
+    .map(|_| ())
 }
 
 async fn refresh_depth_snapshot(
     handle: &RithmicTickerPlantHandle,
     subscription: &mut DepthSubscription,
 ) -> Result<(), String> {
-    let responses = handle
-        .get_depth_by_order_snapshot(&subscription.symbol, &subscription.exchange)
-        .await
-        .map_err(|error| error.to_string())?;
+    let responses = match tokio::time::timeout(
+        DEPTH_SNAPSHOT_TIMEOUT,
+        handle.get_depth_by_order_snapshot(&subscription.symbol, &subscription.exchange),
+    )
+    .await
+    {
+        Ok(result) => result.map_err(|error| error.to_string())?,
+        Err(_) => {
+            return Err(format!(
+                "Timed out waiting for the Depth-by-Order snapshot of {}.{} after {}s",
+                subscription.symbol,
+                subscription.exchange,
+                DEPTH_SNAPSHOT_TIMEOUT.as_secs()
+            ));
+        }
+    };
     let mut orders = Vec::new();
     let mut sequence = None;
     for response in responses {
@@ -1145,51 +1206,127 @@ fn publishable_depth_changes(
     Some(changes)
 }
 
+/// Bounded budgets for the upstream acknowledgements of a new subscription.
+///
+/// Rithmic acknowledges a new subscription slowly once the session is already
+/// streaming a heavy Depth-by-Order book, and `rithmic-rs` waits for that
+/// acknowledgement without any timeout of its own. Every acknowledgement wait
+/// in this file is therefore bounded, and a missing acknowledgement is never
+/// treated as a failure: the request is already in flight and the subscription
+/// is verified by the market data or snapshot that arrives for it.
+const SUBSCRIBE_ACK_TIMEOUT: Duration = Duration::from_secs(3);
+const DEPTH_ACK_TIMEOUT: Duration = Duration::from_secs(3);
+const DEPTH_UNSUBSCRIBE_TIMEOUT: Duration = Duration::from_secs(3);
+const SESSION_STATISTICS_BUDGET: Duration = Duration::from_secs(2);
+/// The Depth-by-Order snapshot is one request that streams many parts back. It
+/// is much slower than a subscription acknowledgement once a depth stream is
+/// live, so it gets a generous bound: failing it degrades the DOM to best
+/// bid/ask levels, which must not happen for a merely slow snapshot.
+const DEPTH_SNAPSHOT_TIMEOUT: Duration = Duration::from_secs(45);
+/// How long one subscription waits for its first market data. An acknowledged
+/// subscription answers immediately; an unacknowledged one is normally live but
+/// its stream starts behind the upstream backlog, so it gets a much longer
+/// window instead of being discarded.
+const CONFIRMED_SNAPSHOT_DEADLINE: Duration = Duration::from_secs(2);
+const UNCONFIRMED_SNAPSHOT_DEADLINE: Duration = Duration::from_secs(25);
+
 async fn subscribe(
     handle: &RithmicTickerPlantHandle,
     symbol: &str,
     exchange: &str,
-) -> Result<(), String> {
-    let response = tokio::time::timeout(Duration::from_secs(5), handle.subscribe(symbol, exchange))
-        .await
-        .map_err(|_| format!("Timed out subscribing to {symbol}.{exchange}"))?
-        .map_err(|error| error.to_string())?;
-    if let Some(error) = response.error {
-        return Err(error.to_string());
-    }
-    // Statistics permissions can differ from Last/BBO permissions. Preserve
-    // the usable feed and leave unavailable statistics explicitly unset.
-    for result in [
-        tokio::time::timeout(
-            Duration::from_secs(3),
-            handle.subscribe_session_prices(symbol, exchange),
-        )
-        .await
-        .map_err(|_| "session-price subscription timed out".to_owned())
-        .and_then(|value| value.map_err(|error| error.to_string())),
-        tokio::time::timeout(
-            Duration::from_secs(3),
-            handle.subscribe_open_interest(symbol, exchange),
-        )
-        .await
-        .map_err(|_| "open-interest subscription timed out".to_owned())
-        .and_then(|value| value.map_err(|error| error.to_string())),
-        tokio::time::timeout(
-            Duration::from_secs(3),
-            handle.subscribe_end_of_day_prices(symbol, exchange),
-        )
-        .await
-        .map_err(|_| "end-of-day subscription timed out".to_owned())
-        .and_then(|value| value.map_err(|error| error.to_string())),
-    ] {
-        match result {
-            Ok(response) if response.error.is_none() => {}
-            result => eprintln!(
-                "[Feed] Optional session statistics unavailable for {symbol}.{exchange}: {result:?}"
-            ),
+) -> Result<SubscribeAck, String> {
+    let label = format!("market-data subscription for {symbol}.{exchange}");
+    let ack = bounded_ack(
+        SUBSCRIBE_ACK_TIMEOUT,
+        &label,
+        handle.subscribe(symbol, exchange),
+    )
+    .await?;
+    subscribe_session_statistics(handle, symbol, exchange).await;
+    Ok(match ack {
+        Some(_) => SubscribeAck::Confirmed,
+        None => SubscribeAck::Unconfirmed,
+    })
+}
+
+/// Waits for one acknowledgement under a bounded budget.
+///
+/// `Ok(None)` means no acknowledgement arrived in time. That is a warning, not
+/// a failure: the request is already in flight, so the caller verifies the
+/// subscription with live data (or a snapshot) instead of discarding it. This
+/// is what keeps a symbol subscribed while the session is already streaming:
+/// without it a slow acknowledgement throws away a live subscription and blocks
+/// the market loop for the whole cleanup budget.
+async fn bounded_ack<F>(
+    budget: Duration,
+    label: &str,
+    request: F,
+) -> Result<Option<RithmicResponse>, String>
+where
+    F: std::future::Future<Output = Result<RithmicResponse, RithmicError>>,
+{
+    match tokio::time::timeout(budget, request).await {
+        Ok(Ok(response)) => match response.error {
+            Some(error) => Err(error.to_string()),
+            None => Ok(Some(response)),
+        },
+        Ok(Err(error)) => Err(error.to_string()),
+        Err(_) => {
+            eprintln!(
+                "[Feed] No acknowledgement for {label} within {}s; the request is in flight, verifying it with live data",
+                budget.as_secs()
+            );
+            Ok(None)
         }
     }
-    Ok(())
+}
+
+/// Statistics permissions can differ from Last/BBO permissions, and their
+/// acknowledgements are even slower than the subscription's on a busy session.
+/// All three requests are therefore sent concurrently inside one shared budget:
+/// each of them already reaches the client as a normal market-data update, so
+/// no caller waits for them individually.
+async fn subscribe_session_statistics(
+    handle: &RithmicTickerPlantHandle,
+    symbol: &str,
+    exchange: &str,
+) {
+    let requests = async {
+        tokio::join!(
+            handle.subscribe_session_prices(symbol, exchange),
+            handle.subscribe_open_interest(symbol, exchange),
+            handle.subscribe_end_of_day_prices(symbol, exchange),
+        )
+    };
+    match tokio::time::timeout(SESSION_STATISTICS_BUDGET, requests).await {
+        Ok((session_prices, open_interest, end_of_day)) => {
+            report_optional_statistics("session prices", symbol, exchange, session_prices);
+            report_optional_statistics("open interest", symbol, exchange, open_interest);
+            report_optional_statistics("end-of-day prices", symbol, exchange, end_of_day);
+        }
+        Err(_) => eprintln!(
+            "[Feed] Optional session statistics for {symbol}.{exchange} were not acknowledged within {}s; the requests are in flight",
+            SESSION_STATISTICS_BUDGET.as_secs()
+        ),
+    }
+}
+
+fn report_optional_statistics(
+    label: &str,
+    symbol: &str,
+    exchange: &str,
+    result: Result<RithmicResponse, RithmicError>,
+) {
+    match result {
+        Ok(response) if response.error.is_none() => {}
+        Ok(response) => eprintln!(
+            "[Feed] Optional {label} unavailable for {symbol}.{exchange}: {:?}",
+            response.error
+        ),
+        Err(error) => {
+            eprintln!("[Feed] Optional {label} unavailable for {symbol}.{exchange}: {error}")
+        }
+    }
 }
 
 async fn unsubscribe(
@@ -1259,8 +1396,12 @@ async fn capture_market_snapshot(
 ) -> Result<MarketSnapshot, String> {
     let mut receiver = handle.subscription_receiver.resubscribe();
     let result = async {
-        subscribe(handle, symbol, exchange).await?;
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+        let acknowledgement = subscribe(handle, symbol, exchange).await?;
+        let wait = match acknowledgement {
+            SubscribeAck::Confirmed => CONFIRMED_SNAPSHOT_DEADLINE,
+            SubscribeAck::Unconfirmed => UNCONFIRMED_SNAPSHOT_DEADLINE,
+        };
+        let deadline = tokio::time::Instant::now() + wait;
         let mut quiet = deadline;
         let mut seen = false;
         let mut groups = 0_u8;
@@ -1571,17 +1712,6 @@ fn timestamp_us(seconds: Option<i32>, microseconds: Option<i32>, nanoseconds: Op
         .map(|value| i64::from(value.clamp(0, 999_999_999)) / 1_000)
         .unwrap_or_else(|| i64::from(microseconds.unwrap_or_default().clamp(0, 999_999)));
     seconds.saturating_mul(1_000_000).saturating_add(fraction)
-}
-
-fn parse_environment(value: &str) -> Result<RithmicEnv, FeedError> {
-    match value.trim().to_ascii_lowercase().as_str() {
-        "demo" => Ok(RithmicEnv::Demo),
-        "live" => Ok(RithmicEnv::Live),
-        "test" => Ok(RithmicEnv::Test),
-        _ => Err(FeedError(
-            "RITHMIC_ENV must be demo, live, or test".to_owned(),
-        )),
-    }
 }
 
 #[cfg(test)]
