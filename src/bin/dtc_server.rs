@@ -87,7 +87,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             eprintln!("[DTC Admin] stopped: {error}");
         }
     });
-    let mut services = match connect_dtc_services(&admin.config()).await {
+    let mut active_config = admin.config();
+    let mut services = match connect_dtc_services(&active_config).await {
         Ok(value) => {
             admin.set_status("账号已连接");
             Some(value)
@@ -137,11 +138,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     continue;
                 }
                 let next = account_updates.borrow_and_update().clone();
+                let market_changed = next.market != active_config.market;
                 match connect_dtc_services(&next).await {
                     Ok(value) => {
                         services = Some(value);
-                        admin.set_status("切换成功，DTC 客户端正在重连");
-                        generation.send_replace(*generation.borrow() + 1);
+                        active_config = next;
+                        if market_changed {
+                            admin.set_status("行情账号切换成功，DTC 客户端正在重连");
+                            generation.send_replace(*generation.borrow() + 1);
+                        } else {
+                            admin.set_status("下单账号切换成功，行情连接保持不变");
+                        }
                     }
                     Err(error) => {
                         admin.set_status(format!("切换失败，继续使用原账号：{error}"));

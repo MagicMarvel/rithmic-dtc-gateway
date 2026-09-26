@@ -5,7 +5,7 @@ const instruments = [
   { symbol: 'NQZ6', exchange: 'CME', root: 'NQ', name: 'E-mini Nasdaq 100', tick: 0.25 },
   { symbol: 'GCZ6', exchange: 'COMEX', root: 'GC', name: 'Gold Futures', tick: 0.1 },
 ];
-let current = instruments[0], interval = 60, ws, chart, candle, line, footprintCanvas, symbolId, bars = [], last = null, bid = null, ask = null, side = 1, account = '', chartType = 'candles';
+let current = instruments[0], interval = 60, ws, chart, candle, line, footprintCanvas, marketDepthCanvas, symbolId, bars = [], last = null, bid = null, ask = null, side = 1, account = '', chartType = 'candles';
 let memberAuthenticated = false, authenticatedStarted = false;
 let vwapSeries, largeOrderMarkers, drawingCanvas, activeDrawingTool = null, drawingStart = null, drawingHover = null, indicatorFrame = 0, drawingFrame = 0;
 let historyDays = 2, timeZone = 'Asia/Shanghai';
@@ -34,9 +34,9 @@ const MAX_MARKET_TIME_SKEW = 86400;
 const $ = (id) => document.getElementById(id);
 const OVERLAY_STORAGE_KEY = 'odt-chart-overlays-v1';
 const INDICATOR_SETTINGS_KEY = 'odt-indicator-settings-v1', DRAWINGS_STORAGE_KEY = 'odt-chart-drawings-v1';
-const OVERLAY_DEFAULTS = { menthorq: true, largeOrders: false, vwap: false };
+const OVERLAY_DEFAULTS = { menthorq: true, largeOrders: false, vwap: false, marketDepth: true };
 const INDICATOR_DEFAULTS = { largeOrders: { threshold: 50, buyColor: '#29c78a', sellColor: '#f05d6c', labels: true }, vwap: { anchor: 'session', sessionStart: '18:00', customTime: '', source: 'hlc3', color: '#f2bb59', lineWidth: 2 } };
-let largeOrdersVisible = false, vwapVisible = false, indicatorSettings = structuredClone(INDICATOR_DEFAULTS), drawingsBySymbol = {};
+let largeOrdersVisible = false, vwapVisible = false, marketDepthVisible = true, indicatorSettings = structuredClone(INDICATOR_DEFAULTS), drawingsBySymbol = {};
 const fmt = (v, digits = current.tick === 0.1 ? 1 : 2) => v == null || !Number.isFinite(Number(v)) ? '--' : Number(v).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 const show = (message, ms = 3600) => { $('order-message').textContent = message; window.clearTimeout(show.timer); show.timer = window.setTimeout(() => $('order-message').textContent = '', ms); };
 
@@ -50,15 +50,21 @@ function initChart() {
   footprintCanvas = document.createElement('canvas');
   footprintCanvas.className = 'footprint-layer';
   $('chart').appendChild(footprintCanvas);
+  marketDepthCanvas = document.createElement('canvas');
+  marketDepthCanvas.className = 'market-depth-layer';
+  marketDepthCanvas.setAttribute('aria-label', 'Market Depth 实时挂单');
+  $('chart').appendChild(marketDepthCanvas);
   drawingCanvas = document.createElement('canvas');
   drawingCanvas.className = 'drawing-layer';
   drawingCanvas.setAttribute('aria-label', '图表绘图工具层');
   $('chart').appendChild(drawingCanvas);
-  chart.timeScale().subscribeVisibleLogicalRangeChange(() => { scheduleFootprintDraw(); scheduleDrawingDraw(); if (vwapVisible && indicatorSettings.vwap.anchor === 'visible') scheduleIndicators(); });
-  new ResizeObserver(() => { scheduleFootprintDraw(); scheduleDrawingDraw(); }).observe($('chart'));
+  chart.timeScale().subscribeVisibleLogicalRangeChange(() => { scheduleFootprintDraw(); scheduleMarketDepthDraw(); scheduleDrawingDraw(); if (vwapVisible && indicatorSettings.vwap.anchor === 'visible') scheduleIndicators(); });
+  new ResizeObserver(() => { scheduleFootprintDraw(); scheduleMarketDepthDraw(); scheduleDrawingDraw(); }).observe($('chart'));
+  $('chart').addEventListener('wheel', scheduleMarketDepthDraw, { passive: true });
+  $('chart').addEventListener('pointermove', scheduleMarketDepthDraw, { passive: true });
   initDrawingTools();
   chart.timeScale().fitContent();
-  $('fit-chart').onclick = () => { if (chartType === 'footprint') { chart.timeScale().applyOptions({ barSpacing: 118, rightOffset: 2 }); chart.timeScale().scrollToRealTime(); } else { chart.timeScale().fitContent(); } chart.priceScale('right').applyOptions({ autoScale: true }); scheduleFootprintDraw(); };
+  $('fit-chart').onclick = () => { if (chartType === 'footprint') { chart.timeScale().applyOptions({ barSpacing: 118, rightOffset: 2 }); chart.timeScale().scrollToRealTime(); } else { chart.timeScale().fitContent(); } chart.priceScale('right').applyOptions({ autoScale: true }); scheduleFootprintDraw(); scheduleMarketDepthDraw(); };
   document.querySelectorAll('#chart-types button').forEach((button) => button.onclick = () => setChartType(button.dataset.chartType));
   initOverlays($('indicators-menu'));
 }
@@ -72,6 +78,85 @@ function footprintNumber(value) {
   if (Math.abs(n) >= 1e6) return `${(n / 1e6).toFixed(1)}m`;
   if (Math.abs(n) >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+let marketDepthFrame = 0;
+function scheduleMarketDepthDraw() {
+  cancelAnimationFrame(marketDepthFrame);
+  marketDepthFrame = requestAnimationFrame(drawMarketDepth);
+}
+function marketDepthLevels() {
+  const byPrice = new Map();
+  depthBook.forEach((row) => {
+    const price = Number(row.price), quantity = Number(row.quantity || 0);
+    if (!Number.isFinite(price) || quantity <= 0 || !['bid', 'ask'].includes(row.side)) return;
+    const key = depthPriceKey(price), entry = byPrice.get(key) || { price, bid: 0, ask: 0 };
+    entry[row.side] += quantity;
+    byPrice.set(key, entry);
+  });
+  return [...byPrice.values()];
+}
+function drawMarketDepth() {
+  if (!marketDepthCanvas || !candle) return;
+  const host = $('chart'), rect = host.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(rect.width)), height = Math.max(1, Math.round(rect.height));
+  if (marketDepthCanvas.width !== Math.round(width * dpr) || marketDepthCanvas.height !== Math.round(height * dpr)) {
+    marketDepthCanvas.width = Math.round(width * dpr);
+    marketDepthCanvas.height = Math.round(height * dpr);
+    marketDepthCanvas.style.width = `${width}px`;
+    marketDepthCanvas.style.height = `${height}px`;
+  }
+  const ctx = marketDepthCanvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  marketDepthCanvas.dataset.visibleLevels = '0';
+  marketDepthCanvas.dataset.maxQuantity = '0';
+  if (!marketDepthVisible || !depthBook.size) return;
+  let priceScaleWidth = 64;
+  try { priceScaleWidth = Number(chart.priceScale('right').width()) || priceScaleWidth; } catch { /* older chart API */ }
+  const right = Math.max(110, width - priceScaleWidth - 3);
+  const panelWidth = Math.min(180, Math.max(96, Math.round(width * 0.14)));
+  const left = right - panelWidth;
+  const visible = marketDepthLevels().flatMap((level) => [
+    level.bid > 0 ? { price: level.price, quantity: level.bid, side: 'bid' } : null,
+    level.ask > 0 ? { price: level.price, quantity: level.ask, side: 'ask' } : null,
+  ]).filter(Boolean).map((level) => ({ ...level, y: candle.priceToCoordinate(level.price) }))
+    .filter((level) => Number.isFinite(level.y) && level.y >= 20 && level.y <= height - 22);
+  if (!visible.length) return;
+  const maxQuantity = Math.max(1, ...visible.map((level) => level.quantity));
+  const tick = Number(current?.tick) || 0.01;
+  const sample = visible[0];
+  const nextY = candle.priceToCoordinate(sample.price + tick);
+  const tickHeight = Math.abs(Number(nextY) - Number(sample.y));
+  const rowHeight = Number.isFinite(tickHeight) ? Math.min(20, Math.max(3, tickHeight * 0.88)) : 12;
+  marketDepthCanvas.dataset.visibleLevels = String(visible.length);
+  marketDepthCanvas.dataset.maxQuantity = String(maxQuantity);
+  ctx.save();
+  ctx.font = '10px ui-monospace, SFMono-Regular, Consolas, monospace';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(9,14,21,.78)';
+  ctx.fillRect(left, 0, panelWidth, 18);
+  ctx.fillStyle = '#9eb1c7';
+  ctx.fillText('MARKET DEPTH', right - 4, 9);
+  ctx.strokeStyle = 'rgba(120,135,154,.32)';
+  ctx.beginPath(); ctx.moveTo(left, 0); ctx.lineTo(left, height); ctx.stroke();
+  visible.sort((a, b) => a.price - b.price || a.side.localeCompare(b.side)).forEach((level) => {
+    const ratio = Math.min(1, level.quantity / maxQuantity);
+    const barWidth = Math.max(2, panelWidth * ratio);
+    const best = level.side === 'bid' ? Number(level.price) === Number(bid) : Number(level.price) === Number(ask);
+    ctx.fillStyle = level.side === 'bid' ? `rgba(41,199,138,${0.16 + ratio * 0.48})` : `rgba(240,93,108,${0.16 + ratio * 0.48})`;
+    ctx.fillRect(right - barWidth, level.y - rowHeight / 2, barWidth, rowHeight);
+    if (best) {
+      ctx.strokeStyle = level.side === 'bid' ? '#55dca6' : '#ff7b88';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(left, level.y - rowHeight / 2, panelWidth, rowHeight);
+    }
+    if (rowHeight >= 9) {
+      ctx.fillStyle = level.side === 'bid' ? '#bdf7df' : '#ffd2d7';
+      ctx.fillText(footprintNumber(level.quantity), right - 4, level.y);
+    }
+  });
+  ctx.restore();
 }
 function drawFootprint() {
   if (!footprintCanvas) return;
@@ -148,11 +233,11 @@ let depthLocked = false;
 function depthPriceKey(price) { const tick = Number(current?.tick) || 0.01; return Math.round(Number(price) / tick); }
 function depthRowHtml(row, cls) { return `<div class="depth-row ${cls}"><span>${row.bid ? Number(row.bid).toLocaleString() : ''}</span><span class="price">${fmt(row.price)}</span><span>${row.ask ? Number(row.ask).toLocaleString() : ''}</span></div>`; }
 function drawDepth() { const el = $('depth'); if (!el) return; const byPrice = new Map(); depthBook.forEach((row) => { const key = depthPriceKey(row.price); const entry = byPrice.get(key) || { price: Number(row.price), bid: 0, ask: 0 }; entry[row.side] = Number(entry[row.side] || 0) + Number(row.quantity || 0); byPrice.set(key, entry); }); if (depthLocked && Number.isFinite(Number(last))) { const tick = Number(current?.tick) || 0.01; const center = depthPriceKey(last); const rowsEach = Math.max(5, Math.floor(((el.clientHeight || 300) / 23 - 1) / 2)); const rows = []; for (let k = center + rowsEach; k >= center - rowsEach; k -= 1) { const entry = byPrice.get(k) || { price: k * tick, bid: 0, ask: 0 }; const cls = k === center ? 'last' : entry.ask ? 'ask' : entry.bid ? 'bid' : 'empty'; rows.push(depthRowHtml(entry, cls)); } el.innerHTML = rows.join(''); return; } const asks = [...byPrice.values()].filter((r) => r.ask).sort((a, b) => b.price - a.price).slice(-10); const bids = [...byPrice.values()].filter((r) => r.bid).sort((a, b) => b.price - a.price).slice(0, 10); el.innerHTML = [...asks.map((r) => depthRowHtml({ ...r, bid: 0 }, 'ask')), ...bids.map((r) => depthRowHtml({ ...r, ask: 0 }, 'bid'))].join(''); }
-function renderDepth(levels, replace = false) { if (!levels?.length) return; if (replace) depthBook = new Map(); levels.filter(Boolean).forEach((row) => { const key = `${row.side}:${row.level ?? row.price}`; if (row.action === 'delete' || Number(row.quantity) <= 0) depthBook.delete(key); else depthBook.set(key, row); }); drawDepth(); }
+function renderDepth(levels, replace = false) { if (!levels?.length) return; if (replace) depthBook = new Map(); levels.filter(Boolean).forEach((row) => { const key = `${row.side}:${row.level ?? row.price}`; if (row.action === 'delete' || Number(row.quantity) <= 0) depthBook.delete(key); else depthBook.set(key, row); }); drawDepth(); scheduleMarketDepthDraw(); }
 $('depth-lock')?.addEventListener('click', () => { depthLocked = !depthLocked; $('depth-lock').classList.toggle('active', depthLocked); drawDepth(); });
 
 async function loadHistory(refresh = false) { const requestSeq = ++historyRequestSeq; const requestedInstrument = current; const requestedPeriod = period; const requestedType = chartType; const days = historyDays; const orderflow = needsOrderflowHistory(); const query = `symbol=${encodeURIComponent(requestedInstrument.symbol)}&exchange=${encodeURIComponent(requestedInstrument.exchange)}&${periodQuery(requestedPeriod)}&days=${days}${orderflow ? '&footprint=1' : ''}${refresh ? '&refresh=1' : ''}`; setDownloadBusy(true, `下载 ${days} 天 Rithmic 历史…`); try { const barResponse = await fetch(`/api/history?${query}`); const payload = await barResponse.json(); if (!barResponse.ok || !payload.bars) throw new Error(payload.error || `HTTP ${barResponse.status}`); if (requestSeq !== historyRequestSeq || current.symbol !== requestedInstrument.symbol || period !== requestedPeriod || chartType !== requestedType) return; bars = normalizeBars(payload.bars); applyChartData(); const latest = bars[bars.length - 1]; if (latest) { if (last == null) last = latest.close; if (!lastMarketTime) lastMarketTime = latest.time; $('stat-open').textContent = fmt(bars[0].open); $('stat-high').textContent = fmt(Math.max(...bars.map((bar) => bar.high))); $('stat-low').textContent = fmt(Math.min(...bars.map((bar) => bar.low))); $('stat-volume').textContent = Math.round(bars.reduce((sum, bar) => sum + Number(bar.volume || 0), 0)).toLocaleString(); if (!lastLiveEventAt) $('feed-time').textContent = sourceLabel(payload.source); } if (payload.warning) show(payload.warning, 6000); else if (refresh) show(`已加载 ${bars.length} 根K线 · ${payload.days || days} 天 · ${sourceLabel(payload.source)}`); renderQuote(false); fitChart(); scheduleFootprintDraw(); scheduleDrawingDraw(); } catch (error) { console.error('[History]', error); if (requestSeq === historyRequestSeq && current.symbol === requestedInstrument.symbol && period === requestedPeriod) show(`History unavailable: ${error.message}`); return; } finally { if (requestSeq === historyRequestSeq) setDownloadBusy(false); } }
-function fitChart() { if (chartType === 'footprint') { chart.timeScale().applyOptions({ barSpacing: 118, rightOffset: 2 }); chart.timeScale().scrollToRealTime(); } else chart.timeScale().fitContent(); scheduleFootprintDraw(); }
+function fitChart() { if (chartType === 'footprint') { chart.timeScale().applyOptions({ barSpacing: 118, rightOffset: 2 }); chart.timeScale().scrollToRealTime(); } else chart.timeScale().fitContent(); scheduleFootprintDraw(); scheduleMarketDepthDraw(); }
 function sourceLabel(source) { return { 'local-cache': 'Rithmic 本地缓存', 'local-cache-stale': 'Rithmic 本地缓存（刷新失败）', 'rithmic': 'Rithmic 历史', 'rithmic-ticks': 'Rithmic 成交明细', 'rithmic+live': 'Rithmic 成交明细 + 实时成交', 'live-trades': 'Rithmic 实时成交（启动后累积）' }[source] || source || '未知来源'; }
 function setDownloadBusy(busy, text) { const button = $('history-download'); if (button) { button.disabled = busy; button.textContent = busy ? '下载中…' : '下载'; } if (busy && text && !lastLiveEventAt) $('feed-time').textContent = text; }
 function initHistoryDays() { const stored = Math.floor(Number(localStorage.getItem(HISTORY_DAYS_STORAGE_KEY))); if (stored >= 1 && stored <= MAX_HISTORY_DAYS) historyDays = stored; $('history-days').value = String(historyDays); const download = () => { const value = Math.floor(Number($('history-days').value)); if (!(value >= 1 && value <= MAX_HISTORY_DAYS)) return show(`天数需在 1 到 ${MAX_HISTORY_DAYS} 之间`); historyDays = value; localStorage.setItem(HISTORY_DAYS_STORAGE_KEY, String(value)); historyRequestSeq += 1; loadHistory(true); }; $('history-download').onclick = download; $('history-days').onkeydown = (event) => { if (event.key === 'Enter') download(); }; }
@@ -277,12 +362,12 @@ function startMemberSession(username) { memberAuthenticated = true; $('member-ga
 async function initMemberAuth() { $('member-login-form').onsubmit = async (event) => { event.preventDefault(); const button = $('member-login-button'); button.disabled = true; $('member-message').textContent = '正在验证会员资格…'; try { const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: $('member-username').value.trim(), password: $('member-password').value }) }); const data = await response.json(); if (!response.ok || !data.authenticated) throw new Error(data.error || `HTTP ${response.status}`); $('member-password').value = ''; startMemberSession(data.username); } catch (error) { $('member-message').textContent = error.message; } finally { button.disabled = false; } }; $('member-session-button').onclick = async () => { if (!memberAuthenticated) return $('member-gate').classList.remove('hidden'); if (!confirm('退出会员账号并停止接收行情？')) return; await fetch('/api/auth/logout', { method: 'POST' }); memberAuthenticated = false; authenticatedStarted = false; if (ws) { ws.onclose = null; ws.close(); ws = null; } bars = []; candle.setData([]); line.setData([]); depthBook = new Map(); $('depth').replaceChildren(); showMemberGate('已退出会员账号'); }; try { const response = await fetch('/api/auth/session'); const data = await response.json(); if (data.authenticated) startMemberSession(data.username); else showMemberGate('', data.configured); } catch (error) { showMemberGate(`无法验证会员状态：${error.message}`); } }
 buildTabs(); initChart(); initPeriods(); initHistoryDays(); initTimezone(); try { initConnectionSettings(); } catch (error) { console.error('Connection settings init failed', error); } initMemberAuth(); window.__terminalBooted = true;
 
-function loadOverlaySettings() { let stored = {}, savedIndicators = {}, savedDrawings = {}; try { stored = JSON.parse(localStorage.getItem(OVERLAY_STORAGE_KEY) || '{}'); } catch { stored = {}; } try { savedIndicators = JSON.parse(localStorage.getItem(INDICATOR_SETTINGS_KEY) || '{}'); } catch { savedIndicators = {}; } try { savedDrawings = JSON.parse(localStorage.getItem(DRAWINGS_STORAGE_KEY) || '{}'); } catch { savedDrawings = {}; } const settings = { ...OVERLAY_DEFAULTS, ...(stored && typeof stored === 'object' ? stored : {}) }; menthorqVisible = Boolean(settings.menthorq); largeOrdersVisible = Boolean(settings.largeOrders); vwapVisible = Boolean(settings.vwap); indicatorSettings = { largeOrders: { ...INDICATOR_DEFAULTS.largeOrders, ...(savedIndicators.largeOrders || {}) }, vwap: { ...INDICATOR_DEFAULTS.vwap, ...(savedIndicators.vwap || {}) } }; drawingsBySymbol = savedDrawings && typeof savedDrawings === 'object' ? savedDrawings : {}; }
-function saveOverlaySettings() { localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify({ menthorq: menthorqVisible, largeOrders: largeOrdersVisible, vwap: vwapVisible })); }
+function loadOverlaySettings() { let stored = {}, savedIndicators = {}, savedDrawings = {}; try { stored = JSON.parse(localStorage.getItem(OVERLAY_STORAGE_KEY) || '{}'); } catch { stored = {}; } try { savedIndicators = JSON.parse(localStorage.getItem(INDICATOR_SETTINGS_KEY) || '{}'); } catch { savedIndicators = {}; } try { savedDrawings = JSON.parse(localStorage.getItem(DRAWINGS_STORAGE_KEY) || '{}'); } catch { savedDrawings = {}; } const settings = { ...OVERLAY_DEFAULTS, ...(stored && typeof stored === 'object' ? stored : {}) }; menthorqVisible = Boolean(settings.menthorq); largeOrdersVisible = Boolean(settings.largeOrders); vwapVisible = Boolean(settings.vwap); marketDepthVisible = Boolean(settings.marketDepth); indicatorSettings = { largeOrders: { ...INDICATOR_DEFAULTS.largeOrders, ...(savedIndicators.largeOrders || {}) }, vwap: { ...INDICATOR_DEFAULTS.vwap, ...(savedIndicators.vwap || {}) } }; drawingsBySymbol = savedDrawings && typeof savedDrawings === 'object' ? savedDrawings : {}; }
+function saveOverlaySettings() { localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify({ menthorq: menthorqVisible, largeOrders: largeOrdersVisible, vwap: vwapVisible, marketDepth: marketDepthVisible })); }
 function saveIndicatorSettings() { localStorage.setItem(INDICATOR_SETTINGS_KEY, JSON.stringify(indicatorSettings)); }
-function overlayActive() { return (menthorqVisible && menthorqLevels.length > 0) || largeOrdersVisible || vwapVisible; }
+function overlayActive() { return (menthorqVisible && menthorqLevels.length > 0) || largeOrdersVisible || vwapVisible || marketDepthVisible; }
 function refreshIndicatorButton() { $('indicators-open')?.classList.toggle('active', overlayActive()); }
-function syncOverlayInputs() { const menu = $('indicators-menu'); if (!menu) return; const menthorqInput = menu.querySelector('input[data-overlay="menthorq"]'), largeInput = menu.querySelector('input[data-overlay="large-orders"]'), vwapInput = menu.querySelector('input[data-overlay="vwap"]'); if (menthorqInput) menthorqInput.checked = menthorqVisible; if (largeInput) largeInput.checked = largeOrdersVisible; if (vwapInput) vwapInput.checked = vwapVisible; }
+function syncOverlayInputs() { const menu = $('indicators-menu'); if (!menu) return; const menthorqInput = menu.querySelector('input[data-overlay="menthorq"]'), largeInput = menu.querySelector('input[data-overlay="large-orders"]'), vwapInput = menu.querySelector('input[data-overlay="vwap"]'), depthInput = menu.querySelector('input[data-overlay="market-depth"]'); if (menthorqInput) menthorqInput.checked = menthorqVisible; if (largeInput) largeInput.checked = largeOrdersVisible; if (vwapInput) vwapInput.checked = vwapVisible; if (depthInput) depthInput.checked = marketDepthVisible; }
 function setMenthorqVisible(visible) { menthorqVisible = Boolean(visible); saveOverlaySettings(); renderMenthorqLines(); syncOverlayInputs(); refreshIndicatorButton(); }
 function closeIndicatorSettings() { $('indicator-settings').classList.remove('open'); $('indicator-settings').setAttribute('aria-hidden', 'true'); $('indicator-settings-backdrop').classList.add('hidden'); }
 function populateIndicatorSettings() { const large = indicatorSettings.largeOrders, vwap = indicatorSettings.vwap; $('large-order-threshold').value = large.threshold; $('large-order-buy-color').value = large.buyColor; $('large-order-sell-color').value = large.sellColor; $('large-order-labels').checked = large.labels; $('vwap-anchor').value = vwap.anchor; $('vwap-session-start').value = vwap.sessionStart; $('vwap-custom-time').value = vwap.customTime; $('vwap-source').value = vwap.source; $('vwap-line-width').value = String(vwap.lineWidth); $('vwap-color').value = vwap.color; updateVwapSettingVisibility(); }
@@ -290,4 +375,4 @@ function openIndicatorSettings(kind) { const large = kind === 'large-orders'; $(
 function updateVwapSettingVisibility() { const anchor = $('vwap-anchor').value; $('vwap-session-wrap').classList.toggle('hidden', anchor !== 'session'); $('vwap-custom-wrap').classList.toggle('hidden', anchor !== 'custom'); }
 function applyIndicatorSettings() { const threshold = Math.floor(Number($('large-order-threshold').value)); if (!(threshold >= 1)) return show('大单阈值必须大于 0'); indicatorSettings.largeOrders = { threshold, buyColor: $('large-order-buy-color').value, sellColor: $('large-order-sell-color').value, labels: $('large-order-labels').checked }; indicatorSettings.vwap = { anchor: $('vwap-anchor').value, sessionStart: $('vwap-session-start').value || '18:00', customTime: $('vwap-custom-time').value, source: $('vwap-source').value, color: $('vwap-color').value, lineWidth: Number($('vwap-line-width').value) || 2 }; saveIndicatorSettings(); closeIndicatorSettings(); renderIndicators(); scheduleDrawingDraw(); }
 function initIndicatorSettings() { $('indicator-settings-close').onclick = closeIndicatorSettings; $('indicator-settings-backdrop').onclick = closeIndicatorSettings; $('vwap-anchor').onchange = updateVwapSettingVisibility; $('indicator-settings-save').onclick = applyIndicatorSettings; $('indicator-settings-reset').onclick = () => { const kind = $('indicator-settings').dataset.kind; if (kind === 'large-orders') indicatorSettings.largeOrders = { ...INDICATOR_DEFAULTS.largeOrders }; else indicatorSettings.vwap = { ...INDICATOR_DEFAULTS.vwap }; populateIndicatorSettings(); }; document.querySelectorAll('[data-indicator-settings]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); openIndicatorSettings(button.dataset.indicatorSettings); }); }
-function initOverlays(menu) { syncOverlayInputs(); $('indicators-open').onclick = (event) => { event.stopPropagation(); menu.classList.toggle('hidden'); }; menu.onclick = (event) => event.stopPropagation(); document.addEventListener('click', () => menu.classList.add('hidden')); const menthorqInput = menu.querySelector('input[data-overlay="menthorq"]'), largeInput = menu.querySelector('input[data-overlay="large-orders"]'), vwapInput = menu.querySelector('input[data-overlay="vwap"]'); if (menthorqInput) menthorqInput.onchange = () => { const wanted = menthorqInput.checked; setMenthorqVisible(wanted); if (wanted && !menthorqLevels.length) { if ($('mq-api-key')?.value.trim()) fetchMenthorqLevels(); else openMenthorqSettings(); } }; if (largeInput) largeInput.onchange = () => { largeOrdersVisible = largeInput.checked; saveOverlaySettings(); if (largeOrdersVisible && !bars.some((bar) => bar.levels?.length)) loadHistory(); else renderIndicators(); syncOverlayInputs(); }; if (vwapInput) vwapInput.onchange = () => { vwapVisible = vwapInput.checked; saveOverlaySettings(); renderIndicators(); syncOverlayInputs(); }; initIndicatorSettings(); refreshIndicatorButton(); }
+function initOverlays(menu) { if (!menu.querySelector('input[data-overlay="market-depth"]')) { const section = document.createElement('details'); section.open = true; section.innerHTML = '<summary>订单簿</summary><label class="check-row"><input type="checkbox" data-overlay="market-depth" /> Market Depth（实时挂单）</label><div class="period-hint">按当前可见挂单量归一化，显示在图表最右侧</div>'; menu.appendChild(section); } syncOverlayInputs(); $('indicators-open').onclick = (event) => { event.stopPropagation(); menu.classList.toggle('hidden'); }; menu.onclick = (event) => event.stopPropagation(); document.addEventListener('click', () => menu.classList.add('hidden')); const menthorqInput = menu.querySelector('input[data-overlay="menthorq"]'), largeInput = menu.querySelector('input[data-overlay="large-orders"]'), vwapInput = menu.querySelector('input[data-overlay="vwap"]'), depthInput = menu.querySelector('input[data-overlay="market-depth"]'); if (menthorqInput) menthorqInput.onchange = () => { const wanted = menthorqInput.checked; setMenthorqVisible(wanted); if (wanted && !menthorqLevels.length) { if ($('mq-api-key')?.value.trim()) fetchMenthorqLevels(); else openMenthorqSettings(); } }; if (largeInput) largeInput.onchange = () => { largeOrdersVisible = largeInput.checked; saveOverlaySettings(); if (largeOrdersVisible && !bars.some((bar) => bar.levels?.length)) loadHistory(); else renderIndicators(); syncOverlayInputs(); }; if (vwapInput) vwapInput.onchange = () => { vwapVisible = vwapInput.checked; saveOverlaySettings(); renderIndicators(); syncOverlayInputs(); }; if (depthInput) depthInput.onchange = () => { marketDepthVisible = depthInput.checked; saveOverlaySettings(); scheduleMarketDepthDraw(); syncOverlayInputs(); refreshIndicatorButton(); }; initIndicatorSettings(); refreshIndicatorButton(); }

@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 
+[workspace]
+members = ["web-terminal"]
+resolver = "2"
+
 [[bin]]
 name = "rithmic_probe"
 path = "src/bin/rithmic_probe.rs"

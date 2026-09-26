@@ -417,6 +417,13 @@ async fn prepare_trading_replacement(
     if !state.trading_enabled {
         return Ok(None);
     }
+    if crate::dtc_client::gateway_managed_trading() {
+        crate::dtc_client::configure_gateway_trading(settings).await?;
+        tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
+        return Ok(Some(
+            crate::dtc_client::trading_client(crate::dtc_client::address_from_env()).split(),
+        ));
+    }
     let feed = RithmicTradingFeed::connect(settings.to_config()?, settings.to_account()?)
         .await
         .map_err(|error| error.to_string())?;
@@ -447,6 +454,9 @@ async fn switch_connection(
 }
 
 async fn reset_connection(state: &TerminalState) -> Result<ConnectionSettings, String> {
+    if crate::dtc_client::gateway_managed_trading() {
+        crate::dtc_client::disable_gateway_trading().await?;
+    }
     *state.trading.write().await = None;
     state.trading_connected.store(false, Ordering::Release);
     Ok(state.order_connection.clear_trading_settings())
@@ -1667,6 +1677,17 @@ async fn connection_test_api(
 ) -> Response {
     if settings.password.trim().is_empty() {
         settings.password = state.order_connection.settings().password;
+    }
+    if crate::dtc_client::gateway_managed_trading() {
+        return match settings.normalized() {
+            Ok(settings) => Json(json!({
+                "ok": true,
+                "elapsedMs": 0,
+                "systems": KNOWN_SYSTEMS,
+                "message": format!("配置格式有效；保存时将由 Gateway 验证 {} / {}", settings.user, settings.system_name)
+            })).into_response(),
+            Err(error) => (StatusCode::BAD_REQUEST, Json(json!({"ok": false, "error": error}))).into_response(),
+        };
     }
     let config = match settings.to_config() {
         Ok(config) => config,

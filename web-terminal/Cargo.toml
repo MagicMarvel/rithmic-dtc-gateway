@@ -1,0 +1,10 @@
+[package]
+name = "rithmic-web-terminal"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+dotenvy = "0.15"
+rithmic-dtc-bridge = { path = ".." }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

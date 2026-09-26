@@ -1,4 +1,28 @@
-# rithmic-dtc-bridge
+# ODT Rithmic Gateway + Web Terminal
+
+This repository is a Rust workspace containing two independently deployable
+applications:
+
+- `dtc_server` is the Rithmic gateway. It owns the server market-data account,
+  history cache, optional per-member Paper trading routes, and exposes only the
+  standard DTC binary protocol to downstream applications.
+- `rithmic-web-terminal` is the member-facing Web application. It depends on the
+  gateway through DTC for live quotes, depth, history, accounts, and Paper order
+  routing; it never receives the server's Rithmic credentials.
+
+The production deployment uses `deploy/compose.yaml`. Only Web port 11200 is
+bound to loopback for the TLS proxy; DTC and its private admin API stay on the
+Compose network. No database is required. Runtime state is kept in bind-mounted
+`data/gateway` and `data/web` directories.
+
+```powershell
+Copy-Item deploy/gateway.env.example deploy/gateway.env
+Copy-Item deploy/web.env.example deploy/web.env
+docker compose -f deploy/compose.yaml up -d
+```
+
+Build definitions are in `docker/gateway.Dockerfile` and
+`docker/web.Dockerfile`.
 
 A local Rust bridge from Rithmic to Sierra Chart. It uses
 [`rithmic-rs`](https://crates.io/crates/rithmic-rs) for upstream connectivity and
@@ -173,7 +197,8 @@ minute-bar history, live candles, best bid/ask, aggregated depth, Paper order
 entry, positions, working orders, and cancel requests. Start it with:
 
 ```powershell
-cargo run --bin trading_terminal
+$env:DTC_GATEWAY_ADDR = "127.0.0.1:11099"
+cargo run -p rithmic-web-terminal
 ```
 
 The default URL is `http://127.0.0.1:11200/`; override it with

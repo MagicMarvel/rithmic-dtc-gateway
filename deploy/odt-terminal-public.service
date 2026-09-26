@@ -1,0 +1,19 @@
+[Unit]
+Description=ODT Web terminal TLS proxy
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/socat OPENSSL-LISTEN:2054,reuseaddr,fork,cert=/opt/odt-terminal/tls/public.crt,key=/opt/odt-terminal/tls/public.key,verify=0,openssl-min-proto-version=TLS1.2 TCP:127.0.0.1:11200
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/opt/odt-terminal/tls
+
+[Install]
+WantedBy=multi-user.target

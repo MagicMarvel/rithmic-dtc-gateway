@@ -629,7 +629,9 @@ async fn start_historical_request(
         start_time: read_i64(bytes, 96),
         end_time: read_i64(bytes, 104),
         max_days: read_u32(bytes, 112),
-        tick_bar_length: 0,
+        // Private extension used by the companion Web terminal. Standard DTC
+        // clients leave these reserved bytes at zero.
+        tick_bar_length: read_u32(bytes, 116),
     };
     eprintln!(
         "[DTC] Historical request: RequestID={}, {}.{}, interval={}s, start={}, end={}, max_days={}",

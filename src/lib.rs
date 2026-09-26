@@ -1,6 +1,7 @@
 pub mod connection;
 pub mod dtc;
 pub mod dtc_accounts;
+pub mod dtc_client;
 pub mod history_feed;
 pub mod identity;
 mod maintenance_retry;

@@ -1056,6 +1056,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rithmic-web-terminal"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "rithmic-dtc-bridge",
+ "tokio",
+]
+
+[[package]]
 name = "rustc-hash"
 version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
