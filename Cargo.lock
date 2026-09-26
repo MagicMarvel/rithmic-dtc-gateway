@@ -1059,8 +1059,14 @@ dependencies = [
 name = "rithmic-web-terminal"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "dotenvy",
+ "futures-util",
+ "rand 0.10.2",
+ "reqwest",
  "rithmic-dtc-bridge",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

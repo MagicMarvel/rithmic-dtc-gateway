@@ -3,21 +3,21 @@ use rithmic_rs::rti::messages::RithmicMessage;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct MarketSnapshot {
-    pub(crate) settlement: Option<f64>,
-    pub(crate) open: Option<f64>,
-    pub(crate) high: Option<f64>,
-    pub(crate) low: Option<f64>,
-    pub(crate) volume: Option<f64>,
-    pub(crate) open_interest: Option<u32>,
-    pub(crate) bid: Option<f64>,
-    pub(crate) ask: Option<f64>,
-    pub(crate) bid_size: Option<f64>,
-    pub(crate) ask_size: Option<f64>,
-    pub(crate) last: Option<f64>,
-    pub(crate) last_size: Option<f64>,
-    pub(crate) last_time_us: i64,
-    pub(crate) quote_time_us: i64,
-    pub(crate) settlement_date: u32,
+    pub settlement: Option<f64>,
+    pub open: Option<f64>,
+    pub high: Option<f64>,
+    pub low: Option<f64>,
+    pub volume: Option<f64>,
+    pub open_interest: Option<u32>,
+    pub bid: Option<f64>,
+    pub ask: Option<f64>,
+    pub bid_size: Option<f64>,
+    pub ask_size: Option<f64>,
+    pub last: Option<f64>,
+    pub last_size: Option<f64>,
+    pub last_time_us: i64,
+    pub quote_time_us: i64,
+    pub settlement_date: u32,
 }
 
 pub(crate) fn key(message: &RithmicMessage) -> Option<(&str, &str)> {

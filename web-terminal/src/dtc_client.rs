@@ -12,7 +12,7 @@ use tokio::{
     time,
 };
 
-use crate::{
+use rithmic_dtc_bridge::{
     connection::ConnectionSettings,
     dtc,
     dtc_accounts::DtcAccounts,
@@ -93,10 +93,6 @@ pub fn trading_client(address: impl Into<String>) -> TradingDataClient {
         }
     });
     TradingDataClient::new(commands_tx, events_rx)
-}
-
-pub fn gateway_managed_trading() -> bool {
-    env::var("DTC_GATEWAY_ADMIN_URL").is_ok()
 }
 
 pub async fn configure_gateway_trading(settings: &ConnectionSettings) -> Result<(), String> {
@@ -500,7 +496,7 @@ async fn subscribe_depth(
 
 async fn load_history(
     address: &str,
-    request: crate::market_gateway::HistoricalRequest,
+    request: rithmic_dtc_bridge::market_gateway::HistoricalRequest,
 ) -> Result<Vec<HistoricalRecord>, String> {
     let mut stream = open_session(address).await?;
     let mut wire = vec![0_u8; 128];

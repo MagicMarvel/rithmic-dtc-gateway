@@ -1,6 +1,9 @@
 use std::error::Error;
 
-use rithmic_dtc_bridge::{connection::SharedConnection, dtc_client, terminal};
+mod dtc_client;
+mod terminal;
+
+use rithmic_dtc_bridge::connection::SharedConnection;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

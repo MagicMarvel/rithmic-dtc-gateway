@@ -51,7 +51,7 @@ impl Instrument {
         })
     }
 
-    pub(crate) fn matches(&self, symbol: &str, exchange: &str) -> bool {
+    pub fn matches(&self, symbol: &str, exchange: &str) -> bool {
         (symbol.eq_ignore_ascii_case(&self.symbol)
             && (exchange.is_empty() || exchange.eq_ignore_ascii_case(&self.exchange)))
             || (exchange.is_empty()
@@ -110,7 +110,7 @@ pub enum MarketEvent {
 }
 
 #[derive(Debug)]
-pub(crate) enum MarketCommand {
+pub enum MarketCommand {
     LoadCatalog {
         preferred_underlying: String,
         response: oneshot::Sender<Result<Vec<Instrument>, String>>,
@@ -172,23 +172,20 @@ pub(crate) enum MarketCommand {
 }
 
 pub struct MarketDataClient {
-    pub(crate) commands: mpsc::Sender<MarketCommand>,
-    pub(crate) events: mpsc::Receiver<MarketEvent>,
-    pub(crate) publish_catalog_at_logon: bool,
+    pub commands: mpsc::Sender<MarketCommand>,
+    pub events: mpsc::Receiver<MarketEvent>,
+    pub publish_catalog_at_logon: bool,
 }
 
 /// Commands the terminal and the DTC server issue without owning the event
 /// stream. Cloning only clones the command channel.
 #[derive(Clone)]
-pub(crate) struct MarketControl {
+pub struct MarketControl {
     commands: mpsc::Sender<MarketCommand>,
 }
 
 impl MarketDataClient {
-    pub(crate) fn new(
-        commands: mpsc::Sender<MarketCommand>,
-        events: mpsc::Receiver<MarketEvent>,
-    ) -> Self {
+    pub fn new(commands: mpsc::Sender<MarketCommand>, events: mpsc::Receiver<MarketEvent>) -> Self {
         Self {
             commands,
             events,
@@ -196,7 +193,7 @@ impl MarketDataClient {
         }
     }
 
-    pub(crate) fn with_logon_catalog(
+    pub fn with_logon_catalog(
         commands: mpsc::Sender<MarketCommand>,
         events: mpsc::Receiver<MarketEvent>,
     ) -> Self {
@@ -207,7 +204,7 @@ impl MarketDataClient {
         }
     }
 
-    pub(crate) fn split(self) -> (MarketControl, mpsc::Receiver<MarketEvent>) {
+    pub fn split(self) -> (MarketControl, mpsc::Receiver<MarketEvent>) {
         (
             MarketControl {
                 commands: self.commands,
@@ -218,7 +215,7 @@ impl MarketDataClient {
 }
 
 impl MarketControl {
-    pub(crate) async fn subscribe(
+    pub async fn subscribe(
         &self,
         symbol_id: u32,
         symbol: &str,
@@ -242,11 +239,7 @@ impl MarketControl {
     /// One-shot snapshot of an already subscribed symbol: served from the
     /// in-memory state without an upstream round trip, which is what a browser
     /// reload or a second tab needs.
-    pub(crate) async fn snapshot(
-        &self,
-        symbol: &str,
-        exchange: &str,
-    ) -> Result<MarketSnapshot, String> {
+    pub async fn snapshot(&self, symbol: &str, exchange: &str) -> Result<MarketSnapshot, String> {
         let (response, receiver) = oneshot::channel();
         self.commands
             .send(MarketCommand::Snapshot {
@@ -261,7 +254,7 @@ impl MarketControl {
             .map_err(|_| "snapshot response dropped".to_owned())?
     }
 
-    pub(crate) async fn subscribe_depth(
+    pub async fn subscribe_depth(
         &self,
         symbol_id: u32,
         symbol: &str,
@@ -323,7 +316,7 @@ pub enum HistoricalRecord {
 }
 
 impl HistoricalRecord {
-    pub(crate) fn datetime_us(&self) -> i64 {
+    pub fn datetime_us(&self) -> i64 {
         match self {
             Self::Tick { datetime_us, .. } => *datetime_us,
             Self::Bar {
@@ -343,14 +336,14 @@ pub struct HistoricalResponse {
 
 #[derive(Clone)]
 pub struct HistoryDataClient {
-    pub(crate) commands: mpsc::Sender<(
+    pub commands: mpsc::Sender<(
         HistoricalRequest,
         mpsc::Sender<Result<HistoricalResponse, String>>,
     )>,
 }
 
 impl HistoryDataClient {
-    pub(crate) fn new(
+    pub fn new(
         commands: mpsc::Sender<(
             HistoricalRequest,
             mpsc::Sender<Result<HistoricalResponse, String>>,
@@ -359,17 +352,14 @@ impl HistoryDataClient {
         Self { commands }
     }
 
-    pub(crate) async fn load(
-        &self,
-        request: HistoricalRequest,
-    ) -> Result<Vec<HistoricalRecord>, String> {
+    pub async fn load(&self, request: HistoricalRequest) -> Result<Vec<HistoricalRecord>, String> {
         self.load_with_progress(request, |_, _| {}).await
     }
 
     /// Like [`load`](Self::load) but calls `on_batch(batches_received,
     /// records_so_far)` after every batch the worker sends, which is one per
     /// request chunk (see `history_feed::split_history_request`).
-    pub(crate) async fn load_with_progress(
+    pub async fn load_with_progress(
         &self,
         request: HistoricalRequest,
         mut on_batch: impl FnMut(usize, usize),
@@ -484,7 +474,7 @@ pub struct CancelOrderRequest {
 }
 
 #[derive(Debug)]
-pub(crate) enum TradingCommand {
+pub enum TradingCommand {
     Accounts(oneshot::Sender<Result<Vec<TradeAccount>, String>>),
     OpenOrders(oneshot::Sender<Result<Vec<TradingOrder>, String>>),
     OrderState(
@@ -507,24 +497,24 @@ pub enum TradingEvent {
 }
 
 pub struct TradingDataClient {
-    pub(crate) commands: mpsc::Sender<TradingCommand>,
-    pub(crate) events: mpsc::Receiver<TradingEvent>,
+    pub commands: mpsc::Sender<TradingCommand>,
+    pub events: mpsc::Receiver<TradingEvent>,
 }
 
 #[derive(Clone)]
-pub(crate) struct TradingControl {
+pub struct TradingControl {
     commands: mpsc::Sender<TradingCommand>,
 }
 
 impl TradingDataClient {
-    pub(crate) fn new(
+    pub fn new(
         commands: mpsc::Sender<TradingCommand>,
         events: mpsc::Receiver<TradingEvent>,
     ) -> Self {
         Self { commands, events }
     }
 
-    pub(crate) fn split(self) -> (TradingControl, mpsc::Receiver<TradingEvent>) {
+    pub fn split(self) -> (TradingControl, mpsc::Receiver<TradingEvent>) {
         (
             TradingControl {
                 commands: self.commands,
@@ -535,7 +525,7 @@ impl TradingDataClient {
 }
 
 impl TradingControl {
-    pub(crate) async fn accounts(&self) -> Result<Vec<TradeAccount>, String> {
+    pub async fn accounts(&self) -> Result<Vec<TradeAccount>, String> {
         let (tx, rx) = oneshot::channel();
         self.commands
             .send(TradingCommand::Accounts(tx))
@@ -544,7 +534,7 @@ impl TradingControl {
         rx.await
             .map_err(|_| "account response dropped".to_owned())?
     }
-    pub(crate) async fn open_orders(&self) -> Result<Vec<TradingOrder>, String> {
+    pub async fn open_orders(&self) -> Result<Vec<TradingOrder>, String> {
         let (tx, rx) = oneshot::channel();
         self.commands
             .send(TradingCommand::OpenOrders(tx))
@@ -552,7 +542,7 @@ impl TradingControl {
             .map_err(|_| "trading service stopped".to_owned())?;
         rx.await.map_err(|_| "orders response dropped".to_owned())?
     }
-    pub(crate) async fn positions(&self) -> Result<Vec<TradingPosition>, String> {
+    pub async fn positions(&self) -> Result<Vec<TradingPosition>, String> {
         let (tx, rx) = oneshot::channel();
         self.commands
             .send(TradingCommand::Positions(tx))
@@ -561,7 +551,7 @@ impl TradingControl {
         rx.await
             .map_err(|_| "positions response dropped".to_owned())?
     }
-    pub(crate) async fn balance(&self) -> Result<AccountBalance, String> {
+    pub async fn balance(&self) -> Result<AccountBalance, String> {
         let (tx, rx) = oneshot::channel();
         self.commands
             .send(TradingCommand::Balance(tx))
@@ -570,7 +560,7 @@ impl TradingControl {
         rx.await
             .map_err(|_| "balance response dropped".to_owned())?
     }
-    pub(crate) async fn submit(&self, request: NewOrderRequest) -> Result<(), String> {
+    pub async fn submit(&self, request: NewOrderRequest) -> Result<(), String> {
         let (tx, rx) = oneshot::channel();
         self.commands
             .send(TradingCommand::Submit(request, tx))
@@ -578,7 +568,7 @@ impl TradingControl {
             .map_err(|_| "trading service stopped".to_owned())?;
         rx.await.map_err(|_| "submit response dropped".to_owned())?
     }
-    pub(crate) async fn cancel(&self, request: CancelOrderRequest) -> Result<(), String> {
+    pub async fn cancel(&self, request: CancelOrderRequest) -> Result<(), String> {
         let (tx, rx) = oneshot::channel();
         self.commands
             .send(TradingCommand::Cancel(request, tx))

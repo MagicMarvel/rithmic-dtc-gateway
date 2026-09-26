@@ -5,11 +5,10 @@ ENV PATH=/root/.cargo/bin:$PATH
 WORKDIR /source
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
-COPY tests ./tests
-RUN cargo build --release --bin dtc_server
+RUN cargo build --release
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=build /source/target/release/dtc_server /usr/local/bin/rithmic-dtc-gateway
+COPY --from=build /source/target/release/rithmic-web-terminal /usr/local/bin/rithmic-web-terminal
 WORKDIR /data
-ENTRYPOINT ["/usr/local/bin/rithmic-dtc-gateway"]
+ENTRYPOINT ["/usr/local/bin/rithmic-web-terminal"]

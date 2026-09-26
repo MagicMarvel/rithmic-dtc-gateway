@@ -8,18 +8,6 @@ use std::{
     },
 };
 
-use crate::{
-    connection::{ConnectionSettings, KNOWN_SYSTEMS, KNOWN_URLS, SharedConnection},
-    identity::synthetic_mac,
-    market_data::MarketSnapshot,
-    market_gateway::{
-        AccountBalance, CancelOrderRequest, HistoricalRecord, HistoryDataClient, MarketControl,
-        MarketDataClient, MarketEvent, NewOrderRequest, TradeAccount, TradingControl,
-        TradingDataClient, TradingEvent, TradingOrder, TradingPosition,
-    },
-    order_book::{DepthLevel, LevelUpdateType, Side},
-    trading_feed::RithmicTradingFeed,
-};
 use axum::{
     Json, Router,
     extract::{
@@ -32,6 +20,16 @@ use axum::{
     routing::{get, post},
 };
 use futures_util::StreamExt;
+use rithmic_dtc_bridge::{
+    connection::{ConnectionSettings, KNOWN_SYSTEMS, KNOWN_URLS, SharedConnection},
+    market_data::MarketSnapshot,
+    market_gateway::{
+        AccountBalance, CancelOrderRequest, HistoricalRecord, HistoryDataClient, MarketControl,
+        MarketDataClient, MarketEvent, NewOrderRequest, TradeAccount, TradingControl,
+        TradingDataClient, TradingEvent, TradingOrder, TradingPosition,
+    },
+    order_book::{DepthLevel, LevelUpdateType, Side},
+};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::{
@@ -417,17 +415,11 @@ async fn prepare_trading_replacement(
     if !state.trading_enabled {
         return Ok(None);
     }
-    if crate::dtc_client::gateway_managed_trading() {
-        crate::dtc_client::configure_gateway_trading(settings).await?;
-        tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
-        return Ok(Some(
-            crate::dtc_client::trading_client(crate::dtc_client::address_from_env()).split(),
-        ));
-    }
-    let feed = RithmicTradingFeed::connect(settings.to_config()?, settings.to_account()?)
-        .await
-        .map_err(|error| error.to_string())?;
-    Ok(Some(feed.client().split()))
+    crate::dtc_client::configure_gateway_trading(settings).await?;
+    tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
+    Ok(Some(
+        crate::dtc_client::trading_client(crate::dtc_client::address_from_env()).split(),
+    ))
 }
 
 async fn switch_connection(
@@ -454,9 +446,7 @@ async fn switch_connection(
 }
 
 async fn reset_connection(state: &TerminalState) -> Result<ConnectionSettings, String> {
-    if crate::dtc_client::gateway_managed_trading() {
-        crate::dtc_client::disable_gateway_trading().await?;
-    }
+    crate::dtc_client::disable_gateway_trading().await?;
     *state.trading.write().await = None;
     state.trading_connected.store(false, Ordering::Release);
     Ok(state.order_connection.clear_trading_settings())
@@ -1126,8 +1116,8 @@ fn rithmic_history_request(
     kind: BarKind,
     start_time: i64,
     end_time: i64,
-) -> crate::market_gateway::HistoricalRequest {
-    crate::market_gateway::HistoricalRequest {
+) -> rithmic_dtc_bridge::market_gateway::HistoricalRequest {
+    rithmic_dtc_bridge::market_gateway::HistoricalRequest {
         request_id: 1,
         symbol: query.symbol.clone(),
         exchange: query.exchange.clone(),
@@ -1615,7 +1605,7 @@ fn connection_status_json(state: &TerminalState) -> Value {
     payload["knownUrls"] = json!(KNOWN_URLS);
     payload["knownSystems"] = json!(KNOWN_SYSTEMS);
     payload["savedFile"] = json!(
-        crate::connection::saved_settings_path()
+        rithmic_dtc_bridge::connection::saved_settings_path()
             .display()
             .to_string()
     );
@@ -1678,99 +1668,14 @@ async fn connection_test_api(
     if settings.password.trim().is_empty() {
         settings.password = state.order_connection.settings().password;
     }
-    if crate::dtc_client::gateway_managed_trading() {
-        return match settings.normalized() {
-            Ok(settings) => Json(json!({
-                "ok": true,
-                "elapsedMs": 0,
-                "systems": KNOWN_SYSTEMS,
-                "message": format!("配置格式有效；保存时将由 Gateway 验证 {} / {}", settings.user, settings.system_name)
-            })).into_response(),
-            Err(error) => (StatusCode::BAD_REQUEST, Json(json!({"ok": false, "error": error}))).into_response(),
-        };
-    }
-    let config = match settings.to_config() {
-        Ok(config) => config,
-        Err(error) => {
-            return (StatusCode::BAD_REQUEST, Json(json!({"error": error}))).into_response();
-        }
-    };
-    let started = std::time::Instant::now();
-    let result = tokio::time::timeout(std::time::Duration::from_secs(25), async {
-        // Rithmic answers the system-info query only on a connection that has
-        // not logged in and closes it afterwards, so it gets its own socket.
-        let systems = match rithmic_rs::RithmicTickerPlant::connect(
-            &config,
-            rithmic_rs::ConnectStrategy::Simple,
-        )
-        .await
-        {
-            Ok(plant) => {
-                let handle = plant.get_handle();
-                let systems = match handle.get_system_info().await {
-                    Ok(response) => match response.message {
-                        rithmic_rs::rti::messages::RithmicMessage::ResponseRithmicSystemInfo(
-                            info,
-                        ) => info.system_name,
-                        _ => Vec::new(),
-                    },
-                    Err(_) => Vec::new(),
-                };
-                handle.abort();
-                let _ = plant.await_shutdown().await;
-                systems
-            }
-            Err(error) => return Err((format!("connection failed: {error}"), Vec::new())),
-        };
-        if !systems.is_empty() && !systems.iter().any(|name| name == &config.system_name) {
-            return Err((
-                format!(
-                    "system {:?} is not offered by this gateway",
-                    config.system_name
-                ),
-                systems,
-            ));
-        }
-        let plant =
-            rithmic_rs::RithmicTickerPlant::connect(&config, rithmic_rs::ConnectStrategy::Simple)
-                .await
-                .map_err(|error| (format!("connection failed: {error}"), systems.clone()))?;
-        let handle = plant.get_handle();
-        let mut login = rithmic_rs::LoginConfig::default();
-        login.mac_addr = Some(vec![synthetic_mac()]);
-        match handle.login_with_config(login).await {
-            Ok(_) => {
-                let _ = handle.disconnect().await;
-                let _ = plant.await_shutdown().await;
-                Ok(systems)
-            }
-            Err(error) => {
-                handle.abort();
-                let _ = plant.await_shutdown().await;
-                Err((format!("login failed: {error}"), systems))
-            }
-        }
-    })
-    .await;
-    let elapsed_ms = started.elapsed().as_millis() as u64;
-    match result {
-        Ok(Ok(systems)) => Json(json!({
+    match settings.normalized() {
+        Ok(settings) => Json(json!({
             "ok": true,
-            "elapsedMs": elapsed_ms,
-            "systems": systems,
-            "message": format!("Login succeeded for {} on {}", config.user, config.system_name)
-        }))
-        .into_response(),
-        Ok(Err((error, systems))) => (
-            StatusCode::BAD_GATEWAY,
-            Json(json!({"ok": false, "error": error, "systems": systems, "elapsedMs": elapsed_ms})),
-        )
-            .into_response(),
-        Err(_) => (
-            StatusCode::GATEWAY_TIMEOUT,
-            Json(json!({"ok": false, "error": "connection test timed out after 25s", "elapsedMs": elapsed_ms})),
-        )
-            .into_response(),
+            "elapsedMs": 0,
+            "systems": KNOWN_SYSTEMS,
+            "message": format!("配置格式有效；保存时将由 Gateway 验证 {} / {}", settings.user, settings.system_name)
+        })).into_response(),
+        Err(error) => (StatusCode::BAD_REQUEST, Json(json!({"ok": false, "error": error}))).into_response(),
     }
 }
 
@@ -1933,7 +1838,7 @@ fn snapshot_bbo_levels(snapshot: &MarketSnapshot) -> Vec<Value> {
 fn depth_json(level: DepthLevel) -> Value {
     json!({"side":match level.side { Side::Bid => "bid", Side::Ask => "ask" },"price":level.price,"quantity":level.quantity,"orders":level.num_orders,"level":level.level})
 }
-fn depth_update_json(update: &crate::order_book::LevelUpdate) -> Value {
+fn depth_update_json(update: &rithmic_dtc_bridge::order_book::LevelUpdate) -> Value {
     json!({"side":match update.side { Side::Bid => "bid", Side::Ask => "ask" },"price":update.price,"quantity":update.quantity,"orders":update.num_orders,"level":update.level,"action":match update.update_type { LevelUpdateType::Delete => "delete", LevelUpdateType::Insert => "insert", LevelUpdateType::Update => "update" }})
 }
 fn bar_json(record: HistoricalRecord) -> Option<Value> {
